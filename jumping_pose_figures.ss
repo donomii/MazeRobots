@@ -2,6 +2,7 @@
 
 (require mzlib/defmacro)
 (require scheme/class ) ;scheme/gui/base)
+[require "simple_figure.rkt"]
 (require mred
          ;mzlib/class
          mzlib/math
@@ -215,29 +216,7 @@
                   )
                 new-genome)
            
-           ;           (gl-push-matrix)
-           ;           (gl-translate -3.0 -2.0 0.0)
-           ;           (gl-rotate rotation 0.0 0.0 1.0)
-           ;           (gl-call-list gear1)
-           ;           (gl-pop-matrix)
-           ;           
-           ;           (gl-push-matrix)
-           ;           (gl-translate 3.1 -2.0 0.0)
-           ;           (gl-rotate (- (* -2.0 rotation) 9.0) 0.0 0.0 1.0)
-           ;           (gl-call-list gear2)
-           ;           (gl-pop-matrix)
-           ;           
-           ;           (gl-push-matrix)
-           ;           (gl-translate -3.1 4.2 0.0)
-           ;           (gl-rotate (- (* -2.0 rotation) 25.0) 0.0 0.0 1.0)
-           ;           (gl-call-list gear3)
-           ;           (gl-pop-matrix)
-           ;           
-           ;           
-           ;           (gl-pop-matrix)
-           ;           (gl-push-matrix)
-           ;           (gl-translate 3.1 -2.0 0.0)
-           ;           
+         
            (gl-pop-matrix)
            (swap-gl-buffers)
            (gl-flush)
@@ -283,92 +262,6 @@
 (send topwin show #t)
 ;(send dc show)
 
-[defmacro trans [ xx y z thunk ]
-                 ;[lambda []
-                  `[ begin
-                    [gl-push-matrix]
-                   (gl-translate ,xx ,y ,z)
- [,thunk]
- [gl-pop-matrix]
-                  ; ]
-  [lambda [] "trans"]] ]  
-[defmacro left  [thunk] `[trans -1 0 0 ,thunk]]
-[defmacro right [thunk] `[trans 1 0 0  ,thunk]]
-[defmacro above [thunk] `[trans 0 1 0  ,thunk]]
-[defmacro below [thunk] `[trans 0 -1 0 ,thunk]]
-[defmacro forwards [thunk] `[trans 0 0 1 ,thunk]]
-[defmacro backwards [thunk] `[trans 0 0 -1 ,thunk]]
-[define tri [lambda []
-              (glBegin GL_TRIANGLES)
-              (glVertex3i 0 1 0)				
-              (glVertex3i -1 -1  0)			
-              (glVertex3i 1 -1  0)
-              (glEnd)]]
-[defmacro rot [x y z o]
-                   `[begin
-                   [gl-push-matrix]
-                   (glRotated ,x 1 0 0)
-                               (glRotated ,y 0 1 0)
-                               (glRotated ,z 0 0 1)
-                   [,o]
-                   
-                   [gl-pop-matrix]
-                   [lambda [] "rot macro"]]]
-[define push-pop [lambda [a-thunk]
-                   [lambda []
-                     [gl-push-matrix]
-                     [a-thunk]
-                     [gl-pop-matrix]
-                     ]]]
-[define square [lambda []
-                 [one-sided-square]
-                 [rot 0 180 0 one-sided-square]]]
-[define one-sided-square [lambda []
-                 ;[lambda []
-                          ; [gl-push-matrix]
-                           ;[gl-scale 0.5 0.5 0.5]
-              (glBegin GL_TRIANGLES)
-                           
-              (glVertex3i -1 1  0)
-                               (glVertex3i -1 -1  0)
-                               (glVertex3i 1 -1 0)				
-              			
-              
-                               (glVertex3i -1 1  0)
-                 (glVertex3i 1 -1  0)              
-                 (glVertex3i 1 1  0)
-                               
-              (glEnd)
-                           ;[gl-pop-matrix]
-                 [lambda []   "double run on square()" ]
-                 
-                 ]
-                  ; ]
-  ]
-;[define picture [lambda [] [above [beside [rotate 0 0 45 tri] tri] tri]]]
-;[define picture [lambda [] [beside [rotate 0 0 -30 tri] tri]]]
-[defmacro h-strip [t1 t2 t3]  `[begin [left ,t1] [,t2] [right ,t3] [lambda [] "h-strip"]]]
-[defmacro v-strip [t1 t2 t3]  `[begin [above ,t1] [,t2]  [below ,t3] [lambda [] "v-strip"]]]
-[defmacro face [t] 
-                  `[begin
-                     [v-strip [h-strip ,t ,t ,t]
-                           [h-strip ,t ,t ,t]
-                            
-                           [h-strip ,t ,t ,t]]
-                           [lambda [] "face"]
-                           ]]
-[defmacro box []
-  `[begin
-     [gl-push-matrix]
-     [gl-scale 0.5 0.5 0.5]
-     [right [rot 0 90 0 [one-sided-square]]]
-     [left [rot 0 -90 0 [one-sided-square]]]
-     [above [rot -90 0 0 [one-sided-square]]]
-     [below [rot 90 0 0 [one-sided-square]]]
-     [backwards [rot 180 0 0 [one-sided-square]]]
-     [forwards [one-sided-square]]
-     [gl-pop-matrix]
-     [lambda [] #f]]]
 ;[define cube [lambda [t]
 ;              [rot 45 0 0 [face t]]
 ;               [rot 0 45 0 [face t]]
@@ -411,74 +304,10 @@
                  
   ]
                            ]]
-[defmacro right-arm-joint [thunk]
-  `[begin
-    [gl-push-matrix]
-   [rot 0  [- 0 [random 90]] [- [random 180] 90] ,thunk]
-   [gl-pop-matrix]
-   [lambda [] "random-rotate"]
-   ]]
-[defmacro left-arm-joint [thunk]
-  `[begin
-    [gl-push-matrix]
-   [rot 0  [random 90] [- [random 180] 90] ,thunk]
-   [gl-pop-matrix]
-   [lambda [] "random-rotate"]
-   ]]
 [define a-box [new voxel%]]
-[define [randomint i]
-  [if [< i 0] [- 0 [random [* -1 i]]]
-      [random i]]]
-[defmacro joint [x y z thunk]
-  `[begin
-    [gl-push-matrix]
-   [rot [randomint ,x]  [randomint ,y] [randomint ,z ] ,thunk]
-   [gl-pop-matrix]
-   [lambda [] "joint"]
-   ]]
+
 (define-syntax njoint
   (lambda (x)
     (syntax-case x ()
       [(_ x y z ...)
        (syntax (rot x y z ...))])))
-
-[defmacro right-arm []
-  `[right [right [right-arm-joint [begin [box]  [right box] [right [joint 1 -90 1 [begin [right box] [right [right  box]]]]]]]]]
-  ]
-[defmacro left-arm []
-  `[left [left [left-arm-joint [begin [box]  [left box] [left [joint 1 90 1 [begin [left box]  [left [left  box]]]]]]]]]
-  ]
-[define body [lambda [] 
-               ;torso
-               [face [box]]
-               ;hips
-               [below [below [h-strip box box box]]]
-               ;legs
-[below [below [below [below [begin 
-                              [joint 90 1 1 [right [v-strip box box box]]]
-                        [joint 90 1 1 [left [v-strip box box box]]]]]]]]
-[above [begin
-         ;arms
-         [left-arm]
-         [right-arm]]]
-               
-               ;head
-             [above [above box]]  ]]
-             
-[define test  [lambda []
-                ;[send [new thingy% [draw-routine [lambda [] [box]]]] render]
-                [body]
-                  ;[send a-box render]
-                ;[below [box]]
-  ;[square]
-  ;[left [rot 0 -90 0 [face square]]]              
-  ;              [right [rot 0 90 0 [face square]]]
-  ;              [above [rot -90 0 0 [face square]]]
-  ;[above square]
-  ;[[above [above [square]]]]
-  ;[left [above [above square]]]
-                ;[h-strip square square square]
-                ;[v-strip square null square]
-                ;[face square]
-                ]]
-[define picture test]

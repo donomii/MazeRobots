@@ -440,11 +440,6 @@
            ] [list [list angles1 angles-column1] [list angles2  angles-column2]]]]
     (send topwin show #t) ))
     
-(gl-frame)
-(send topwin show #t)
-;(send dc show)
-[define best-gl (new gears-canvas% (parent draw-row) [best-display? #t](min-width pic-width) (min-height pic-height) (stretchable-width #f) (stretchable-height #f) )]
-;(define best-gl #f)
 
 
 (define (do-paint new-genome best?)
@@ -469,6 +464,9 @@
                   (gl-pop-matrix)
                   
                 ))
+
+
+
 
 [define null [lambda [] [lambda [] #f]]]
 
@@ -519,3 +517,8 @@
                 ]]
 [define picture test]
 
+(gl-frame)
+(send topwin show #t)
+;(send dc show)
+[define best-gl (new gears-canvas% (parent draw-row) [best-display? #t](min-width pic-width) (min-height pic-height) (stretchable-width #f) (stretchable-height #f) )]
+;(define best-gl #f)
