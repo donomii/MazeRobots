@@ -13,18 +13,30 @@
 (require scheme/foreign)
 (define pic-width 468)
 (define pic-height 495)
+[define display-gl #f]
 (define topwin (new (class frame%
                       (augment* [on-close (lambda () (exit))])
                       (augment* [can-close? (lambda () #t)])
                       
                       (define/override (on-focus event)
                         [displayln "focus"])
-                      (define/override (on-subwindow-char event)
-                        [displayln "Caught key event"]
-                        [displayln event])
-                      (define/override (on-subwindow-event event)
-                        [displayln "Caught key event"]
-                        [displayln event])
+                      (define/override (on-subwindow-char win event)
+                        ;[displayln "Caught key event"]
+                        [let [[key [send event get-key-code]]]
+                          [when [equal? key #\a]
+                            [send display-gl move-left]]
+                          [when [equal? key #\d]
+                            [send display-gl move-right]]
+                          [when [equal? key #\w]
+                            [send display-gl move-up]]
+                          [when [equal? key #\s]
+                            [send display-gl move-down]]])
+                      (define/override (on-subwindow-event win event)
+                        ;[writeln "Caught mouse event"]
+                        [when [equal? [send event get-event-type] 'left-down]
+                          [printf "Caught mouse click at ~a,~a~n"[send event get-x][send event get-y]]
+                          [displayln [get-gl-pixel [send event get-x][send event get-y]]]
+                          ])
                       (super-new))
                     [label "Game"]
                     [style '(metal)]))
@@ -84,6 +96,9 @@
                                          `[,x 0 ,y]
                                          ] [iota 5 -2 1]]
                                   ] [iota 5 -2 1]]]]
+[define colours  [map [lambda [r]
+                        `[,[random] ,[random] ,[random]  ,[random]]
+                        ] [iota 25]]]
 [random-seed 2]
 
 [define target-list [apply append [map [lambda [x]
@@ -114,6 +129,21 @@
           ]]
 
 
+[define [do-paint]
+  [set! mans (map (lambda (v target colour)
+                    (gl-push-matrix)
+
+                    (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+                    (apply gl-rotate (fullAngle v target))
+                                
+                    [gl-scale 0.1 0.1 0.1]
+                              
+                    [figure colour]
+
+                    (gl-pop-matrix)
+                    [map [lambda[e t] [moveTo e t 0.1]] v target]
+                    )
+                  mans targets colours)]]
 
 (define gears-canvas%
   (class* canvas% ()
@@ -191,13 +221,10 @@
       
         
         
-      (when step?
-        ;; TODO: Don't increment this infinitely.
-        ;(set! view-roty (+ view-roty 1.0))
-        (set! rotation (+ 2.0 rotation)))
+      
       (with-gl-context
-          (lambda ()
-           
+          [lambda [] 
+  
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
            
@@ -205,46 +232,26 @@
             (gl-rotate view-rotx 1.0 0.0 0.0)
             (gl-rotate view-roty 0.0 1.0 0.0)
             (gl-rotate view-rotz 0.0 0.0 1.0)
-              
-              
-            [set! mans (map (lambda (v target)
-                              (gl-push-matrix)
-
-                              ;(gl-rotate [vec-angle (list-ref v 0) (list-ref v 1)   (list-ref v 2) (list-ref target 0) (list-ref target 1)   (list-ref target 2)] 0.0 1.0 0.0)
-                                
-                              ;(gl-rotate [random 360] 0.0 0.0 1.0)
-                              (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-                              (apply gl-rotate (fullAngle v target))
-                                
-                              [gl-scale 0.1 0.1 0.1]
-                              [figure '(0.5 0.5 0.5 1.0)]
-
-                              (gl-pop-matrix)
-                              [map [lambda[e t] [moveTo e t 0.1]] v target]
-                              )
-                            mans targets)]
-           
-         
+            [do-paint]
             (gl-pop-matrix)
             (swap-gl-buffers)
             (gl-flush)
             ;(sleep 0.1)
-           
-           
-            ))
+             
+            ])
+      
       (when step?
         (set! step? #f)
-        (queue-callback (lambda x (send this run)))
-        )
-      #f)
+        (queue-callback (lambda x (send this run)) #f ))
+      )
     
     (super-instantiate () (style '(gl no-autoclear)))))
 
 (define (gl-frame)
-  (let* ((f (make-object frame% "gears.ss" #f))
-         (c (new gears-canvas% (parent win) (min-width pic-width) (min-height pic-height) (stretchable-width #f) (stretchable-height #f) )))
+  (let* ((f (make-object frame% "gears.ss" #f)))
+    [set! display-gl (new gears-canvas% (parent win) (min-width pic-width) (min-height pic-height) (stretchable-width #f) (stretchable-height #f))]
     ;(send f create-status-line)
-    (send c run)
+    (send display-gl run)
     
     ))
 [thread [thunk
@@ -292,3 +299,18 @@
     ;[displayln rot-axis]
     [list [* [+ 90  a1] [/ 180 3.1415927]] [list-ref rot-axis 0][list-ref rot-axis 1][list-ref rot-axis 2] ]
     ]]
+
+
+(define get-gl-pixel (lambda (x y) 
+                       (letrec [[rvec (make-cvector _ubyte 1)]
+                                [bvec (make-cvector _ubyte  1)]
+                                [gvec (make-cvector _ubyte  1)]]
+
+                         (glReadPixels x y  1 1 GL_RED GL_UNSIGNED_BYTE rvec)
+                         (glReadPixels x y  1 1 GL_BLUE GL_UNSIGNED_BYTE gvec)
+                         (glReadPixels x y  1 1 GL_GREEN GL_UNSIGNED_BYTE bvec))
+                       [map [lambda [x] [cvector-ref x 0]]  [list rvec gvec bvec]]))
+  
+
+
+
