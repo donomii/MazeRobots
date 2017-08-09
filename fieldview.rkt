@@ -313,7 +313,7 @@
         [car [reverse
               [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x] [* 255 x]] c] colour] best]
                                                        [begin
-                                                         [printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
+                                                         ;[printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
                                                          [set! best [diffcolour [map [lambda [x] [* 255 x]] c] colour]]
                                                          i]
                                                        -1]]
@@ -382,7 +382,7 @@
                          ;       ]
 
                          (glReadPixels x y  1 1 GL_RGBA GL_UNSIGNED_INT_8_8_8_8 rvec)
-                         [printf "~a,~a : ~a~n" x y [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]]
+                         ;[printf "~a,~a : ~a~n" x y [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]]
                          [reverse [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]])))
 ;  
 
