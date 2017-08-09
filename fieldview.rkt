@@ -14,6 +14,10 @@
 (define pic-width 468)
 (define pic-height 495)
 [define display-gl #f]
+[define wantpix #f]
+[define mouseX 0]
+[define mouseY 0]
+[define selected -1]
 (define topwin (new (class frame%
                       (augment* [on-close (lambda () (exit))])
                       (augment* [can-close? (lambda () #t)])
@@ -34,9 +38,13 @@
                       (define/override (on-subwindow-event win event)
                         ;[writeln "Caught mouse event"]
                         [when [equal? [send event get-event-type] 'left-down]
-                          [printf "Caught mouse click at ~a,~a~n"[send event get-x][send event get-y]]
-                          [displayln [get-gl-pixel [send event get-x][send event get-y]]]
-                          ])
+                          ;[printf "Caught mouse click at ~a,~a~n"[send event get-x][send event get-y]]
+                          
+                          [set! wantpix #t]
+                          [set! mouseX [send event get-x]]
+                          [set! mouseY [- pic-height [send event get-y]]]
+                          ]
+                        )
                       (super-new))
                     [label "Game"]
                     [style '(metal)]))
@@ -55,10 +63,6 @@
 ;       (min-width pic-width) (min-height pic-height)
 ;       [paint-callback showpic]))
 
-(define rvec (make-cvector _ubyte (* pic-width (add1 pic-height))))
-(define bvec (make-cvector _ubyte  (* pic-width (add1 pic-height))))
-(define gvec (make-cvector _ubyte  (* pic-width (add1 pic-height))))
-
 ;(define get-png-pixel (lambda (x y) (let ([ col (new color%)]) 
 ;                                      (send bdc get-pixel x y col)
 ;                                      col)))
@@ -73,9 +77,7 @@
 ;                               
 ;                             ))))
 (define count 0)
-(define get-gl-data (lambda () (glReadPixels 0 0  pic-width pic-height GL_RED GL_UNSIGNED_BYTE rvec)
-                      (glReadPixels 0 0  pic-width pic-height GL_BLUE GL_UNSIGNED_BYTE rvec)
-                      (glReadPixels 0 0  pic-width pic-height GL_GREEN GL_UNSIGNED_BYTE rvec)))
+
 
 [random-seed 1]
 [define [vec-angle v1 v2]
@@ -97,7 +99,8 @@
                                          ] [iota 5 -2 1]]
                                   ] [iota 5 -2 1]]]]
 [define colours  [map [lambda [r]
-                        `[,[random] ,[random] ,[random]  ,[random]]
+                        ;`[,[random] ,[random] ,[random]  1.0]
+                        [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
 [random-seed 2]
 
@@ -130,20 +133,21 @@
 
 
 [define [do-paint]
-  [set! mans (map (lambda (v target colour)
+  [set! mans (map (lambda (v target colour i)
                     (gl-push-matrix)
 
                     (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
                     (apply gl-rotate (fullAngle v target))
                                 
                     [gl-scale 0.1 0.1 0.1]
-                              
-                    [figure colour]
+                    [if [equal? i selected]
+                        [figure [list 1.0 0.0 0.0 1.0]]
+                        [figure colour]]
 
                     (gl-pop-matrix)
                     [map [lambda[e t] [moveTo e t 0.1]] v target]
                     )
-                  mans targets colours)]]
+                  mans targets colours [iota [length mans]])]]
 
 (define gears-canvas%
   (class* canvas% ()
@@ -223,8 +227,24 @@
         
       
       (with-gl-context
+          
           [lambda [] 
-  
+            [if wantpix
+                [begin
+(gl-enable 'cull-face)
+            (gl-disable 'lighting)
+            (gl-disable 'light0)
+            (gl-enable 'depth-test)
+            (gl-enable 'normalize)
+            [gl-disable 'color-material]
+              ]
+                [begin
+                  (gl-enable 'cull-face)
+            ;(gl-enable 'lighting)
+            ;(gl-enable 'light0)
+            ;(gl-enable 'depth-test)
+            ;(gl-enable 'normalize)
+                  ]]
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
            
@@ -236,6 +256,12 @@
             (gl-pop-matrix)
             (swap-gl-buffers)
             (gl-flush)
+            [when wantpix
+              [displayln [get-gl-pixel mouseX mouseY]]
+              [set! selected [matchColour [get-gl-pixel mouseX mouseY] colours]]
+              [printf "figure: ~a~n" selected]
+              [set! wantpix #f]]
+            
             ;(sleep 0.1)
              
             ])
@@ -275,6 +301,26 @@
            [- a c]]
        ]]
 
+[define [diffcolour a b]
+  ;[printf "~a vs ~a~n" a b]
+  [apply + [map [lambda [aa bb] [abs [- aa bb]]] a b]]
+  ]
+
+[define [matchColour colour colours]
+  [if [void? colour]
+      -1
+      [let [[best  999999999]]
+        [car [reverse
+              [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x] [* 255 x]] c] colour] best]
+                                                       [begin
+                                                         [printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
+                                                         [set! best [diffcolour [map [lambda [x] [* 255 x]] c] colour]]
+                                                         i]
+                                                       -1]]
+                                     colours [iota [length colours]]]
+                    
+                      ]]]]]]]
+
 [define [normalise v]
   (match-let ([(list x1 y1 z1) v])
     [let [[mag1 [+ 0.0000001 [sqrt [+ [* x1 x1] [* y1 y1] [* z1 z1]]]]]]
@@ -300,17 +346,56 @@
     [list [* [+ 90  a1] [/ 180 3.1415927]] [list-ref rot-axis 0][list-ref rot-axis 1][list-ref rot-axis 2] ]
     ]]
 
+;(define get-the-bytes
+;  (make-gl-cached-vector
+;   'get-the-bytes
+;   (λ (n)
+;     (log-pict3d-info "<snip> creating temp ARGB bytes of length ~v" n)
+;     (make-bytes n))
+;   bytes-length))
 
+;(define bs (get-the-bytes (* 4 width height)))
+;(glReadPixels 0 0 width height GL_BGRA GL_UNSIGNED_INT_8_8_8_8 bs)
+
+;(define get-gl-pixel (lambda (x y) 
+;                       (letrec [[rvec (make-cvector _ubyte 1)]
+;                                [bvec (make-cvector _ubyte  1)]
+;                                [gvec (make-cvector _ubyte  1)]]
+;
+;                         (glReadPixels 0 0  1 1 GL_RED GL_UNSIGNED_BYTE rvec)
+;                         (glReadPixels x y  1 1 GL_BLUE GL_UNSIGNED_BYTE gvec)
+;                         (glReadPixels x y  1 1 GL_GREEN GL_UNSIGNED_BYTE bvec)
+;                       [map [lambda [channel] [cvector-ref channel 0]]  [list rvec gvec bvec]])))
 (define get-gl-pixel (lambda (x y) 
-                       (letrec [[rvec (make-cvector _ubyte 1)]
-                                [bvec (make-cvector _ubyte  1)]
-                                [gvec (make-cvector _ubyte  1)]]
+                       (letrec [[rvec (list->cvector [list 1 0 0 0] _uint8)]
+                                ]
+                         ;                         
+                         ;[map [lambda [y]
+                         ;
+                         ;       [map [lambda [x]
+                         ;                         (glReadPixels x [- pic-height y]  1 1 GL_RGBA GL_UNSIGNED_INT_8_8_8_8 rvec)
+                         ;                        [display [if [> [cvector-ref  rvec 1] 50]
+                         ;                                     "#" "."]]]
+                         ;                      [iota pic-height]]
+                         ;                      [displayln ""]]
+                         ;     [iota pic-width]
+                         ;       ]
 
-                         (glReadPixels x y  1 1 GL_RED GL_UNSIGNED_BYTE rvec)
-                         (glReadPixels x y  1 1 GL_BLUE GL_UNSIGNED_BYTE gvec)
-                         (glReadPixels x y  1 1 GL_GREEN GL_UNSIGNED_BYTE bvec))
-                       [map [lambda [x] [cvector-ref x 0]]  [list rvec gvec bvec]]))
-  
+                         (glReadPixels x y  1 1 GL_RGBA GL_UNSIGNED_INT_8_8_8_8 rvec)
+                         [printf "~a,~a : ~a~n" x y [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]]
+                         [reverse [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]])))
+;  
 
+;  
+;
+;(define get-gl-pixel (lambda (x y) 
+;                       (letrec [[rvec (make-cvector _ubyte (* pic-width (add1 pic-height)))]
+;                                [bvec (make-cvector _ubyte  (* pic-width (add1 pic-height)))]
+;                                [gvec (make-cvector _ubyte  (* pic-width (add1 pic-height)))]]
+;
+;                         [displayln (glReadPixels 0 0  pic-width pic-height GL_RED GL_UNSIGNED_BYTE rvec)]
+;                         (glReadPixels 0 0  pic-width pic-height GL_BLUE GL_UNSIGNED_BYTE gvec)
+;                         (glReadPixels 0 0  pic-width pic-height GL_GREEN GL_UNSIGNED_BYTE bvec)
+;                       [map [lambda [channel] [cvector-ref channel [+ x [* [- pic-height y] pic-width]]]]  [list rvec gvec bvec]])))
 
-
+[sleep 1]

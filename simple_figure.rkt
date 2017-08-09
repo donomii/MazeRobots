@@ -123,7 +123,9 @@
                [above [above box]]  ]]
 
 [define [figure colour]
+  ;[printf "Drawing with colour ~a~n" colour]
   [gl-polygon-mode 'front-and-back 'fill]
+  [apply glColor4f colour]
 (gl-material-v 'front-and-back
                                  'ambient-and-diffuse
                                  (vector->gl-float-vector (apply vector colour)))
