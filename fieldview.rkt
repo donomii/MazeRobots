@@ -98,6 +98,12 @@
                                          `[,x 0 ,y]
                                          ] [iota 5 -2 1]]
                                   ] [iota 5 -2 1]]]]
+[define boxes [apply append [map [lambda [x]
+                                  [map [lambda [y]
+                                         `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
+                                         ] [iota 5 -2 1]]
+                                  ] [iota 5 -2 1]]]]
+
 [define colours  [map [lambda [r]
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
@@ -106,9 +112,9 @@
 
 [define target-list [apply append [map [lambda [x]
                                          [map [lambda [y]
-                                                `[,[- [random 30] 15] 0 ,[- [random 30] 15]]
+                                                `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
                                                 ] [iota 2 -20 8]]
-                                         ] [iota 2 -20 8]]]
+                                         ] [iota 4 -20 8]]]
   ]
 
 [define targets [apply append [map [lambda [x]
@@ -131,9 +137,35 @@
           [update-targets]
           ]]
 
+[define [drawTargets]
+    (gl-material-v 'front-and-back
+                                 'ambient-and-diffuse
+                                 (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
+  [map [lambda [v]
+         (gl-push-matrix)
+(gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         [gl-scale 0.1 0.1 0.1]
+         [cube]
+         (gl-pop-matrix)]
+         targets]
+  ]
 
-[define [do-paint]
-  [set! mans (map (lambda (v target colour i)
+[define [drawBoxes]
+  
+    (gl-material-v 'front-and-back
+                                 'ambient-and-diffuse
+                                 (vector->gl-float-vector (apply vector [list 0.0 0.0 1.0 1.0])))
+  [map [lambda [v]
+         (gl-push-matrix)
+(gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         [gl-scale 0.1 0.1 0.1]
+         [cube]
+         (gl-pop-matrix)]
+         boxes]
+  ]
+
+[define [drawMans] 
+(map (lambda (v target colour i)
                     (gl-push-matrix)
 
                     (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
@@ -145,7 +177,18 @@
                         [figure colour]]
 
                     (gl-pop-matrix)
-                    [map [lambda[e t] [moveTo e t 0.1]] v target]
+                    ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
+                    [map [lambda[e t] [moveTo e t 0.05]] v target]
+                    )
+                  mans targets colours [iota [length mans]])
+  ]
+[define [do-paint]
+[drawTargets]
+[drawBoxes]
+  [drawMans]
+  [set! mans (map (lambda (v target colour i)
+                    ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
+                    [map [lambda[e t] [moveTo e t 0.05]] v target]
                     )
                   mans targets colours [iota [length mans]])]]
 
@@ -294,8 +337,8 @@
 
 ;moves number a towards number b, by c
 [define [moveTo a b c]
-  [if  [< [* [- a b] [- a b]] 1]
-       a
+  [if  [< [* [- a b] [- a b]] c]
+       b
        [if [< a b]
            [+ a c]
            [- a c]]
@@ -337,6 +380,12 @@
   (match-let ([(list u1 u2 u3) u]
               [(list v1 v2 v3) v])
     [list [- [* u2 v3] [* u3 v2]] [- [* u3 v1] [* u1 v3]] [- [* u1 v2] [* u2 v1]]])]
+
+[define [subVec a b]
+[map [lambda [x y] [- x y]] a b]
+  ]
+[define [lengthVec a]
+  [sqrt [apply + [map [lambda [x] [* x x]] a]]]]
 
 [define [fullAngle v1 v2]
   [letrec [[a1 [vec-angle v1 v2]]

@@ -7,7 +7,7 @@
 (require sgl/gl)
 (require mzlib/defmacro)
 
-(provide body figure)
+(provide body figure cube)
 
 
 
@@ -98,6 +98,7 @@
      [forwards [one-sided-square]]
      [gl-pop-matrix]
      [lambda [] #f]]]
+[define [cube] [box]]
 
 [defmacro right-arm []
   `[right [right [right-arm-joint [begin [box]  [right box] [right [joint 1 -90 1 [begin [right box] [right [right  box]]]]]]]]]
