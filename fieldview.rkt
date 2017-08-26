@@ -11,8 +11,8 @@
 (require sgl/gl)
 [require srfi/1]
 (require scheme/foreign)
-(define pic-width 468)
-(define pic-height 495)
+(define pic-width 800)
+(define pic-height 600)
 [define display-gl #f]
 [define wantpix #f]
 [define mouseX 0]
@@ -96,18 +96,28 @@
 [define mans [apply append [map [lambda [x]
                                   [map [lambda [y]
                                          `[,x 0 ,y]
-                                         ] [iota 5 -2 1]]
+                                         ] [iota 2 -2 1]]
                                   ] [iota 5 -2 1]]]]
 [define boxes [apply append [map [lambda [x]
-                                  [map [lambda [y]
-                                         `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                         ] [iota 5 -2 1]]
-                                  ] [iota 5 -2 1]]]]
+                                   [map [lambda [y]
+                                          `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
+                                          ] [iota 5 -2 1]]
+                                   ] [iota 5 -2 1]]]]
 
 [define colours  [map [lambda [r]
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
+[define jobs
+  [let [[target [list-ref boxes [random [length boxes]]]]
+        [destination [list 0.0 0.0 0.0]]]
+    [list
+     [list
+      [list 'moveTo target]
+      [list 'pickup target]
+      [list 'moveTo destination]
+      [list 'drop target]]]]]
+
 [random-seed 2]
 
 [define target-list [apply append [map [lambda [x]
@@ -138,56 +148,81 @@
           ]]
 
 [define [drawTargets]
-    (gl-material-v 'front-and-back
-                                 'ambient-and-diffuse
-                                 (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
+  (gl-material-v 'front-and-back
+                 'ambient-and-diffuse
+                 (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
   [map [lambda [v]
          (gl-push-matrix)
-(gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
          [gl-scale 0.1 0.1 0.1]
          [cube]
          (gl-pop-matrix)]
-         targets]
+       targets]
   ]
 
 [define [drawBoxes]
   
-    (gl-material-v 'front-and-back
-                                 'ambient-and-diffuse
-                                 (vector->gl-float-vector (apply vector [list 0.0 0.0 1.0 1.0])))
+  (gl-material-v 'front-and-back
+                 'ambient-and-diffuse
+                 (vector->gl-float-vector (apply vector [list 0.0 0.0 1.0 1.0])))
   [map [lambda [v]
          (gl-push-matrix)
-(gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-         [gl-scale 0.1 0.1 0.1]
+         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         [gl-scale 0.3 0.3 0.3]
          [cube]
          (gl-pop-matrix)]
-         boxes]
+       boxes]
   ]
 
 [define [drawMans] 
-(map (lambda (v target colour i)
-                    (gl-push-matrix)
+  (map (lambda (v target colour i)
+         (gl-push-matrix)
 
-                    (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-                    (apply gl-rotate (fullAngle v target))
+         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         (apply gl-rotate (fullAngle v target))
                                 
-                    [gl-scale 0.1 0.1 0.1]
-                    [if [equal? i selected]
-                        [figure [list 1.0 0.0 0.0 1.0]]
-                        [figure colour]]
+         [gl-scale 0.1 0.1 0.1]
+         [if [equal? i selected]
+             [figure [list 1.0 0.0 0.0 1.0]]
+             [figure colour]]
 
-                    (gl-pop-matrix)
+         (gl-pop-matrix)
                  
-                    )
-                  mans targets colours [iota [length mans]])
+         )
+       mans targets colours [iota [length mans]])
   ]
+[define [replace-in-list old new list]
+  [map [lambda [e]
+         [if [equal? e old]
+             new
+             e]]
+       list]]
+
 [define [do-paint]
-[drawTargets]
-[drawBoxes]
+  [drawTargets]
+  [drawBoxes]
+  ;[displayln mans]
   [drawMans]
+  [set! targets [map [lambda [target i]
+                       [if [equal? i 3]
+                           [cadaar  jobs]
+                           target]
+                       ]
+                     targets [iota [length targets]]]
+        ]
   [set! mans (map (lambda (v target colour i)
                     ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                    [map [lambda[e t] [moveTo e t 0.00005]] v target]
+                    ;[displayln jobs]
+                    [if [equal? i 3]
+                        [if [equal? [caaar jobs] 'moveTo]
+                          [if [equal? v target]
+                              [let [[newjob [cdr [car jobs]]]]
+                                [set! jobs [replace-in-list [car jobs] newjob jobs]]
+                                [printf "Moving to new job ~a~n" [car newjob]]
+                                v]
+                              [map [lambda[e t] [moveTo e t 0.005]] v target]]
+                          v]
+                        [map [lambda[e t] [moveTo e t 0.005]] v target]]
                     )
                   mans targets colours [iota [length mans]])]]
 
@@ -273,19 +308,25 @@
           [lambda [] 
             [if wantpix
                 [begin
-(gl-enable 'cull-face)
-            (gl-disable 'lighting)
-            (gl-disable 'light0)
-            (gl-enable 'depth-test)
-            (gl-enable 'normalize)
-            [gl-disable 'color-material]
-              ]
+                  (gl-enable 'cull-face)
+                  (gl-disable 'lighting)
+                  (gl-disable 'light0)
+                  (gl-enable 'depth-test)
+                  (gl-enable 'normalize)
+                  [gl-disable 'color-material]
+                  ]
                 [begin
                   (gl-enable 'cull-face)
-            (gl-enable 'lighting)
-            (gl-enable 'light0)
-            (gl-enable 'depth-test)
-            (gl-enable 'normalize)
+                  (gl-enable 'lighting)
+                  (gl-enable 'light0)
+                  (gl-enable 'depth-test)
+                  (gl-enable 'normalize)
+                  [glFogfv GL_FOG_COLOR (vector->gl-float-vector (apply vector [list 0.5 0.5 0.5 0.5]))];
+                  [glFogi GL_FOG_MODE GL_LINEAR];
+                  [glHint GL_FOG_HINT GL_FASTEST];// GL_NICEST
+                  [glFogf GL_FOG_START -1.0];
+                  [glFogf GL_FOG_END 1.0];
+                  [glFogf GL_FOG_DENSITY 1.0];
                   ]]
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
@@ -354,14 +395,14 @@
       [let [[best  999999999]]
         [car [reverse
               [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x]  [* 256 x]] c] colour] best]
-                                                       [begin
-                                                         ;[printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
-                                                         [set! best [diffcolour [map [lambda [x] [* 256 x]] c] colour]]
-                                                         i]
-                                                       -1]]
-                                     colours [iota [length colours]]]
+                                                                [begin
+                                                                  ;[printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
+                                                                  [set! best [diffcolour [map [lambda [x] [* 256 x]] c] colour]]
+                                                                  i]
+                                                                -1]]
+                                              colours [iota [length colours]]]
                     
-                      ]]]]]]]
+                               ]]]]]]]
 
 [define [normalise v]
   (match-let ([(list x1 y1 z1) v])
@@ -381,7 +422,7 @@
     [list [- [* u2 v3] [* u3 v2]] [- [* u3 v1] [* u1 v3]] [- [* u1 v2] [* u2 v1]]])]
 
 [define [subVec a b]
-[map [lambda [x y] [- x y]] a b]
+  [map [lambda [x y] [- x y]] a b]
   ]
 [define [lengthVec a]
   [sqrt [apply + [map [lambda [x] [* x x]] a]]]]
