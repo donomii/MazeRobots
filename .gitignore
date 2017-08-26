@@ -1,2 +1,4 @@
 compiled/drracket/errortrace/figure_rkt.zo
 *.dep
+*.bak
+compiled/drracket/errortrace/simple_figure_rkt.zo
