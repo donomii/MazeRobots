@@ -177,8 +177,7 @@
                         [figure colour]]
 
                     (gl-pop-matrix)
-                    ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                    [map [lambda[e t] [moveTo e t 0.05]] v target]
+                 
                     )
                   mans targets colours [iota [length mans]])
   ]
@@ -188,7 +187,7 @@
   [drawMans]
   [set! mans (map (lambda (v target colour i)
                     ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                    [map [lambda[e t] [moveTo e t 0.05]] v target]
+                    [map [lambda[e t] [moveTo e t 0.00005]] v target]
                     )
                   mans targets colours [iota [length mans]])]]
 
@@ -283,10 +282,10 @@
               ]
                 [begin
                   (gl-enable 'cull-face)
-            ;(gl-enable 'lighting)
-            ;(gl-enable 'light0)
-            ;(gl-enable 'depth-test)
-            ;(gl-enable 'normalize)
+            (gl-enable 'lighting)
+            (gl-enable 'light0)
+            (gl-enable 'depth-test)
+            (gl-enable 'normalize)
                   ]]
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
@@ -354,10 +353,10 @@
       -1
       [let [[best  999999999]]
         [car [reverse
-              [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x] [* 255 x]] c] colour] best]
+              [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x]  [* 256 x]] c] colour] best]
                                                        [begin
                                                          ;[printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
-                                                         [set! best [diffcolour [map [lambda [x] [* 255 x]] c] colour]]
+                                                         [set! best [diffcolour [map [lambda [x] [* 256 x]] c] colour]]
                                                          i]
                                                        -1]]
                                      colours [iota [length colours]]]
@@ -416,8 +415,8 @@
 ;                         (glReadPixels x y  1 1 GL_GREEN GL_UNSIGNED_BYTE bvec)
 ;                       [map [lambda [channel] [cvector-ref channel 0]]  [list rvec gvec bvec]])))
 (define get-gl-pixel (lambda (x y) 
-                       (letrec [[rvec (list->cvector [list 1 0 0 0] _uint8)]
-                                ]
+                       (letrec [[rvec (make-cvector _ubyte (* pic-width (add1 pic-height)))]]
+                                
                          ;                         
                          ;[map [lambda [y]
                          ;
@@ -430,9 +429,9 @@
                          ;     [iota pic-width]
                          ;       ]
 
-                         (glReadPixels x y  1 1 GL_RGBA GL_UNSIGNED_INT_8_8_8_8 rvec)
+                         (glReadPixels x y  1 1 GL_RGBA GL_UNSIGNED_BYTE rvec)
                          ;[printf "~a,~a : ~a~n" x y [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]]
-                         [reverse [map [lambda [x] [cvector-ref  rvec x]] [iota 4]]])))
+                         [map [lambda [x] [cvector-ref  rvec x]] [iota 4]])))
 ;  
 
 ;  
