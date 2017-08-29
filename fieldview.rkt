@@ -79,7 +79,7 @@
 (define count 0)
 
 
-[random-seed 1]
+[random-seed 3]
 [define [vec-angle v1 v2]
   (match-let ([(list x1 y1 z1) v1]
               [(list x2 y2 z2) v2])
@@ -95,9 +95,10 @@
       ])]
 [define mans [apply append [map [lambda [x]
                                   [map [lambda [y]
-                                         `[,x 0 ,y]
+                                         `[ [,x 0 ,y] []]
                                          ] [iota 2 -2 1]]
                                   ] [iota 5 -2 1]]]]
+
 [define boxes [apply append [map [lambda [x]
                                    [map [lambda [y]
                                           `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
@@ -108,17 +109,16 @@
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
-[define jobs
+[define pending-jobs
   [let [[target [list-ref boxes [random [length boxes]]]]
         [destination [list 0.0 0.0 0.0]]]
     [list
      [list
       [list 'moveTo target]
-      [list 'pickup target]
+      ;[list 'pickup target]
       [list 'moveTo destination]
       [list 'drop target]]]]]
 
-[random-seed 2]
 
 [define target-list [apply append [map [lambda [x]
                                          [map [lambda [y]
@@ -143,20 +143,21 @@
   [sleep 5]
   [update-targets]
   ]
-[thread [lambda []
-          [update-targets]
-          ]]
+;[thread [lambda []
+;          [update-targets]
+;          ]]
 
 [define [drawTargets]
   (gl-material-v 'front-and-back
                  'ambient-and-diffuse
                  (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
   [map [lambda [v]
-         (gl-push-matrix)
-         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-         [gl-scale 0.1 0.1 0.1]
-         [cube]
-         (gl-pop-matrix)]
+         [when [not [empty? v]]
+           (gl-push-matrix)
+           (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+           [gl-scale 0.1 0.1 0.1]
+           [cube]
+           (gl-pop-matrix)]]
        targets]
   ]
 
@@ -178,8 +179,8 @@
   (map (lambda (v target colour i)
          (gl-push-matrix)
 
-         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-         (apply gl-rotate (fullAngle v target))
+         (gl-translate (list-ref [car v] 0) (list-ref [car v] 1)   (list-ref [car v] 2))
+         (apply gl-rotate (fullAngle [car v] target))
                                 
          [gl-scale 0.1 0.1 0.1]
          [if [equal? i selected]
@@ -203,28 +204,51 @@
   [drawBoxes]
   ;[displayln mans]
   [drawMans]
-  [set! targets [map [lambda [target i]
-                       [if [equal? i 3]
-                           [cadaar  jobs]
-                           target]
+  [set! targets [map [lambda [target man i]
+                       
+                       ;[second man]
+                       target
                        ]
-                     targets [iota [length targets]]]
+                     targets mans [iota [length targets]]]
         ]
   [set! mans (map (lambda (v target colour i)
                     ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
                     ;[displayln jobs]
-                    [if [equal? i 3]
-                        [if [equal? [caaar jobs] 'moveTo]
-                          [if [equal? v target]
-                              [let [[newjob [cdr [car jobs]]]]
-                                [set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                [printf "Moving to new job ~a~n" [car newjob]]
-                                v]
-                              [map [lambda[e t] [moveTo e t 0.005]] v target]]
-                          v]
-                        [map [lambda[e t] [moveTo e t 0.005]] v target]]
-                    )
-                  mans targets colours [iota [length mans]])]]
+                    ;[printf "~a, ~a, ~a~n" v target colour]
+                    [letrec [[jobqueue [second v]]
+                             [position [first v]]]
+                      [if [not [empty? jobqueue]]
+                          [letrec [[thisjob [car jobqueue]]]
+                            [set! selected i]
+                            [if [equal? [car thisjob] 'moveTo]
+                                
+                                [if [equal? position [second thisjob]]
+                                    [let [[newjobs  [cdr jobqueue]]]
+                                      ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
+                                      [printf "Moving to new job ~a because ~a equals ~a~n" [car newjobs] position target]
+                                      [list [first v]
+                                            newjobs]]
+                                    [list [map [lambda[e t] [moveTo e t 0.005]] position [second thisjob]]
+                                          jobqueue]]
+                                v]]
+                        
+                          [list [map [lambda[e t] [moveTo e t 0.005]] position target]
+                                [if [not [empty? pending-jobs]]
+                                    [let [[newjob [car pending-jobs]]]
+                                
+                                      [set! pending-jobs [cdr pending-jobs]]
+                                      [printf "pending-jobs: ~a~n" pending-jobs]
+                                
+                                      [printf "2 Moving to new job ~a~n"  newjob]
+                                      newjob]
+                                    '[]]
+                                ]
+
+                          ]
+                      ])
+                  mans targets colours [iota [length mans]])]
+
+  ]
 
 (define gears-canvas%
   (class* canvas% ()
@@ -340,7 +364,7 @@
             (swap-gl-buffers)
             (gl-flush)
             [when wantpix
-              [displayln [get-gl-pixel mouseX mouseY]]
+              [printf "Got pixel: ~a~n"  [get-gl-pixel mouseX mouseY]]
               [set! selected [matchColour [get-gl-pixel mouseX mouseY] colours]]
               [printf "figure: ~a~n" selected]
               [set! wantpix #f]]
@@ -377,6 +401,7 @@
 
 ;moves number a towards number b, by c
 [define [moveTo a b c]
+  ;[printf "Moving from ~a to ~a, step ~a~n" a b c]
   [if  [< [* [- a b] [- a b]] c]
        b
        [if [< a b]
