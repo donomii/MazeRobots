@@ -96,8 +96,8 @@
 [define mans [apply append [map [lambda [x]
                                   [map [lambda [y]
                                          `[ [,x 0 ,y] []]
-                                         ] [iota 2 -2 1]]
-                                  ] [iota 5 -2 1]]]]
+                                         ] [iota 1 -2 1]]
+                                  ] [iota 1 -2 1]]]]
 
 [define boxes [apply append [map [lambda [x]
                                    [map [lambda [y]
@@ -117,7 +117,7 @@
       [list 'moveTo target]
       [list 'pickUp target]
       [list 'moveTo destination]
-      ;[list 'drop target]
+      [list 'drop target]
       ]]]]
 
 
@@ -128,27 +128,23 @@
                                          ] [iota 4 -20 8]]]
   ]
 
-[define targets [apply append [map [lambda [x]
-                                     [map [lambda [y]
-                                            `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                            ] [iota 5 -20 8]]
-                                     ] [iota 5 -20 8]]]]
+
 
 [define [random-from-list target-list]
   [list-ref target-list [random [length target-list]]]
   ]
 
-[define [update-targets]
-  
-  [set! targets [apply append [map [lambda [x]
-                                     [map [lambda [y]
-                                            ;`[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                            [list-ref target-list [random [length target-list]]]
-                                            ] [iota 5 -20 8]]
-                                     ] [iota 5 -20 8]]]]
-  [sleep 5]
-  [update-targets]
-  ]
+;[define [update-targets]
+;  
+;  [set! targets [apply append [map [lambda [x]
+;                                     [map [lambda [y]
+;                                            ;`[,[- [random 10] 5] 0 ,[- [random 10] 5]]
+;                                            [list-ref target-list [random [length target-list]]]
+;                                            ] [iota 5 -20 8]]
+;                                     ] [iota 5 -20 8]]]]
+;  [sleep 5]
+;  [update-targets]
+;  ]
 
 [define [update-jobs]
   [when [empty? pending-jobs]
@@ -160,7 +156,7 @@
                            [list 'moveTo target]
                            [list 'pickUp target]
                            [list 'moveTo destination]
-                           ;[list 'drop target]
+                           [list 'drop destination]
                            ]]]
           ]
     ]
@@ -174,19 +170,19 @@
           [update-jobs]
           ]]
 
-[define [drawTargets]
-  (gl-material-v 'front-and-back
-                 'ambient-and-diffuse
-                 (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
-  [map [lambda [v]
-         [when [not [empty? v]]
-           (gl-push-matrix)
-           (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
-           [gl-scale 0.1 0.1 0.1]
-           [cube]
-           (gl-pop-matrix)]]
-       targets]
-  ]
+;[define [drawTargets]
+;  (gl-material-v 'front-and-back
+;                 'ambient-and-diffuse
+;                 (vector->gl-float-vector (apply vector [list 1.0 0.0 0.0 1.0])))
+;  [map [lambda [v]
+;         [when [not [empty? v]]
+;           (gl-push-matrix)
+;           (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+;           [gl-scale 0.1 0.1 0.1]
+;           [cube]
+;           (gl-pop-matrix)]]
+;       targets]
+;  ]
 
 [define [drawBoxes]
   
@@ -203,11 +199,28 @@
   ]
 
 [define [drawMans] 
-  (map (lambda (v target colour i)
+  (map (lambda (v  colour i)
          (gl-push-matrix)
-
          (gl-translate (list-ref [car v] 0) (list-ref [car v] 1)   (list-ref [car v] 2))
-         (apply gl-rotate (fullAngle [car v] target))
+         
+         [letrec [[jobqueue [second v]]
+                  [position [first v]]]
+           [when [not [empty? jobqueue]]
+               [letrec [[thisjob [car jobqueue]]
+                        [target [second thisjob]]]
+                 [set! selected i]
+                 [case [car thisjob]
+                   ['moveTo
+                    (apply gl-rotate (fullAngle [car v] target))
+                    ]
+                   
+                   
+                   [else v]]]
+               
+               ]
+           ]
+         
+         
                                 
          [gl-scale 0.1 0.1 0.1]
          [if [equal? i selected]
@@ -217,7 +230,7 @@
          (gl-pop-matrix)
                  
          )
-       mans targets colours [iota [length mans]])
+       mans  colours [iota [length mans]])
   ]
 [define [replace-in-list old new list]
   [map [lambda [e]
@@ -233,25 +246,26 @@
           list]]
 
 [define [do-paint]
-  [drawTargets]
+  ;[drawTargets]
   [drawBoxes]
   ;[displayln mans]
   [drawMans]
-  [set! targets [map [lambda [target man i]
-                       
-                       ;[second man]
-                       target
-                       ]
-                     targets mans [iota [length targets]]]
-        ]
-  [set! mans (map (lambda (v target colour i)
+;  [set! targets [map [lambda [target man i]
+;                       
+;                       ;[second man]
+;                       target
+;                       ]
+;                     targets mans [iota [length targets]]]
+;        ]
+  [set! mans (map (lambda (v  colour i)
                     ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
                     ;[displayln jobs]
                     ;[printf "~a, ~a, ~a~n" v target colour]
                     [letrec [[jobqueue [second v]]
                              [position [first v]]]
                       [if [not [empty? jobqueue]]
-                          [letrec [[thisjob [car jobqueue]]]
+                          [letrec [[thisjob [car jobqueue]]
+                                   [target [second thisjob]]]
                             [set! selected i]
                             [case [car thisjob]
                               ['moveTo
@@ -267,10 +281,14 @@
                                [begin
                                  [set! boxes [remove-from-list [second thisjob] boxes]]
                                  [list [first v] [cdr jobqueue]]]]
+                              ['drop
+                               [begin
+                                 [set! boxes [cons [second thisjob] boxes]]
+                                 [list [first v] [cdr jobqueue]]]]
                               [else v]]]
                                 
                         
-                          [list [map [lambda[e t] [moveTo e t 0.005]] position target]
+                          [list [car v]
                                 [if [not [empty? pending-jobs]]
                                     [let [[newjob [car pending-jobs]]]
                                 
@@ -283,7 +301,7 @@
                                 ]
                           ]
                       ])
-                  mans targets colours [iota [length mans]])]
+                  mans  colours [iota [length mans]])]
 
   ]
 
