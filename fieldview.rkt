@@ -115,9 +115,10 @@
     [list
      [list
       [list 'moveTo target]
-      ;[list 'pickup target]
+      [list 'pickUp target]
       [list 'moveTo destination]
-      [list 'drop target]]]]]
+      ;[list 'drop target]
+      ]]]]
 
 
 [define target-list [apply append [map [lambda [x]
@@ -133,7 +134,12 @@
                                             ] [iota 5 -20 8]]
                                      ] [iota 5 -20 8]]]]
 
+[define [random-from-list target-list]
+  [list-ref target-list [random [length target-list]]]
+  ]
+
 [define [update-targets]
+  
   [set! targets [apply append [map [lambda [x]
                                      [map [lambda [y]
                                             ;`[,[- [random 10] 5] 0 ,[- [random 10] 5]]
@@ -143,9 +149,30 @@
   [sleep 5]
   [update-targets]
   ]
+
+[define [update-jobs]
+  [when [empty? pending-jobs]
+    
+    [set! pending-jobs [let [[target [random-from-list boxes]]
+                             [destination [list 0.0 0.0 0.0]]]
+                         [list
+                          [list
+                           [list 'moveTo target]
+                           [list 'pickUp target]
+                           [list 'moveTo destination]
+                           ;[list 'drop target]
+                           ]]]
+          ]
+    ]
+  [sleep 1]
+  [update-jobs]
+  ]
 ;[thread [lambda []
 ;          [update-targets]
 ;          ]]
+[thread [lambda []
+          [update-jobs]
+          ]]
 
 [define [drawTargets]
   (gl-material-v 'front-and-back
@@ -198,6 +225,12 @@
              new
              e]]
        list]]
+[define [remove-from-list item list]
+  [filter [lambda [e]
+            [if [equal? e item]
+                #f
+                e]]
+          list]]
 
 [define [do-paint]
   [drawTargets]
@@ -220,17 +253,22 @@
                       [if [not [empty? jobqueue]]
                           [letrec [[thisjob [car jobqueue]]]
                             [set! selected i]
-                            [if [equal? [car thisjob] 'moveTo]
+                            [case [car thisjob]
+                              ['moveTo
+                               [if [equal? position [second thisjob]]
+                                   [let [[newjobs  [cdr jobqueue]]]
+                                     ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
+                                     [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
+                                     [list [first v]
+                                           newjobs]]
+                                   [list [map [lambda[e t] [moveTo e t 0.005]] position [second thisjob]]
+                                         jobqueue]]]
+                              ['pickUp
+                               [begin
+                                 [set! boxes [remove-from-list [second thisjob] boxes]]
+                                 [list [first v] [cdr jobqueue]]]]
+                              [else v]]]
                                 
-                                [if [equal? position [second thisjob]]
-                                    [let [[newjobs  [cdr jobqueue]]]
-                                      ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                      [printf "Moving to new job ~a because ~a equals ~a~n" [car newjobs] position target]
-                                      [list [first v]
-                                            newjobs]]
-                                    [list [map [lambda[e t] [moveTo e t 0.005]] position [second thisjob]]
-                                          jobqueue]]
-                                v]]
                         
                           [list [map [lambda[e t] [moveTo e t 0.005]] position target]
                                 [if [not [empty? pending-jobs]]
@@ -243,7 +281,6 @@
                                       newjob]
                                     '[]]
                                 ]
-
                           ]
                       ])
                   mans targets colours [iota [length mans]])]
