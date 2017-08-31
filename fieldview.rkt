@@ -29,18 +29,24 @@
                         [let [[key [send event get-key-code]]]
                           [when [equal? key #\x]
                             [exit]]
-                          [when [equal? key #\q]
-                            [send display-gl slide-left]]
-                          [when [equal? key #\e]
-                            [send display-gl slide-right]]
                           [when [equal? key #\a]
-                            [send display-gl move-left]]
+                            [send display-gl slide-left]]
                           [when [equal? key #\d]
-                            [send display-gl move-right]]
-                          [when [equal? key #\w]
-                            [send display-gl move-up]]
+                            [send display-gl slide-right]]
+                              [when [equal? key #\w]
+                            [send display-gl zoom-in]]
                           [when [equal? key #\s]
+                            [send display-gl zoom-out]]
+                          
+                          [when [equal? key #\q]  
+                            [send display-gl move-left]]
+                          [when [equal? key #\e]
+                            [send display-gl move-right]]
+                          [when [equal? key #\r]
+                            [send display-gl move-up]]
+                          [when [equal? key #\f]
                             [send display-gl move-down]]])
+                      
                       (define/override (on-subwindow-event win event)
                         ;[writeln "Caught mouse event"]
                         [when [equal? [send event get-event-type] 'left-down]
@@ -323,7 +329,8 @@
     
     (define rotation 0.0)
 
-    (define view-slide 0.0)
+    (define view-slide-horiz 0.0)
+    (define zoom-level 0.0)
     (define view-rotx 20.0)
     (define view-roty 30.0)
     (define view-rotz 0.0)
@@ -354,11 +361,19 @@
       (refresh))
 
     (define/public (slide-left)
-      (set! view-slide (+ view-slide 5.0))
+      (set! view-slide-horiz (+ view-slide-horiz 2.0))
       (refresh))
     
     (define/public (slide-right)
-      (set! view-slide (- view-slide 5.0))
+      (set! view-slide-horiz (- view-slide-horiz 2.0))
+      (refresh))
+
+        (define/public (zoom-in)
+      (set! zoom-level (+ zoom-level 2.0))
+      (refresh))
+    
+    (define/public (zoom-out)
+      (set! zoom-level (- zoom-level 2.0))
       (refresh))
     
     (define/override (on-size width height)
@@ -429,7 +444,8 @@
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
            
             (gl-push-matrix)
-            (gl-translate view-slide  0.0 1.0)
+            (gl-translate view-slide-horiz  0.0 zoom-level)
+            
             (gl-rotate view-rotx 1.0 0.0 0.0)
             (gl-rotate view-roty 0.0 1.0 0.0)
             (gl-rotate view-rotz 0.0 0.0 1.0)
