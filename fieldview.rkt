@@ -27,6 +27,12 @@
                       (define/override (on-subwindow-char win event)
                         ;[displayln "Caught key event"]
                         [let [[key [send event get-key-code]]]
+                          [when [equal? key #\x]
+                            [exit]]
+                          [when [equal? key #\q]
+                            [send display-gl slide-left]]
+                          [when [equal? key #\e]
+                            [send display-gl slide-right]]
                           [when [equal? key #\a]
                             [send display-gl move-left]]
                           [when [equal? key #\d]
@@ -97,7 +103,7 @@
                                   [map [lambda [y]
                                          `[ [,x 0 ,y] []]
                                          ] [iota 1 -2 1]]
-                                  ] [iota 1 -2 1]]]]
+                                  ] [iota 2 -2 1]]]]
 
 [define boxes [apply append [map [lambda [x]
                                    [map [lambda [y]
@@ -134,17 +140,22 @@
   [list-ref target-list [random [length target-list]]]
   ]
 
-;[define [update-targets]
-;  
-;  [set! targets [apply append [map [lambda [x]
-;                                     [map [lambda [y]
-;                                            ;`[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-;                                            [list-ref target-list [random [length target-list]]]
-;                                            ] [iota 5 -20 8]]
-;                                     ] [iota 5 -20 8]]]]
-;  [sleep 5]
-;  [update-targets]
-;  ]
+[define [update-targets]
+  [let [[newbox `[,[- [random 10] 5] 0 ,[- [random 10] 5]]]
+        [destination [list 0.0 0.0 0.0]]]
+    [set! boxes [cons  newbox boxes]]
+    [set! pending-jobs [cons 
+                        [list
+                         [list 'moveTo newbox]
+                         [list 'pickUp newbox]
+                         [list 'moveTo destination]
+                         [list 'drop destination]
+                         ]
+                        pending-jobs]]
+    ]
+  [sleep 10]
+  [update-targets]
+  ]
 
 [define [update-jobs]
   [when [empty? pending-jobs]
@@ -163,9 +174,9 @@
   [sleep 1]
   [update-jobs]
   ]
-;[thread [lambda []
-;          [update-targets]
-;          ]]
+[thread [lambda []
+          [update-targets]
+          ]]
 [thread [lambda []
           [update-jobs]
           ]]
@@ -206,18 +217,18 @@
          [letrec [[jobqueue [second v]]
                   [position [first v]]]
            [when [not [empty? jobqueue]]
-               [letrec [[thisjob [car jobqueue]]
-                        [target [second thisjob]]]
-                 [set! selected i]
-                 [case [car thisjob]
-                   ['moveTo
-                    (apply gl-rotate (fullAngle [car v] target))
-                    ]
+             [letrec [[thisjob [car jobqueue]]
+                      [target [second thisjob]]]
+               [set! selected i]
+               [case [car thisjob]
+                 ['moveTo
+                  (apply gl-rotate (fullAngle [car v] target))
+                  ]
                    
                    
-                   [else v]]]
+                 [else v]]]
                
-               ]
+             ]
            ]
          
          
@@ -250,13 +261,13 @@
   [drawBoxes]
   ;[displayln mans]
   [drawMans]
-;  [set! targets [map [lambda [target man i]
-;                       
-;                       ;[second man]
-;                       target
-;                       ]
-;                     targets mans [iota [length targets]]]
-;        ]
+  ;  [set! targets [map [lambda [target man i]
+  ;                       
+  ;                       ;[second man]
+  ;                       target
+  ;                       ]
+  ;                     targets mans [iota [length targets]]]
+  ;        ]
   [set! mans (map (lambda (v  colour i)
                     ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
                     ;[displayln jobs]
@@ -275,7 +286,7 @@
                                      [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
                                      [list [first v]
                                            newjobs]]
-                                   [list [map [lambda[e t] [moveTo e t 0.005]] position [second thisjob]]
+                                   [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
                                          jobqueue]]]
                               ['pickUp
                                [begin
@@ -311,7 +322,8 @@
     (inherit refresh with-gl-context swap-gl-buffers get-parent)
     
     (define rotation 0.0)
-    
+
+    (define view-slide 0.0)
     (define view-rotx 20.0)
     (define view-roty 30.0)
     (define view-rotz 0.0)
@@ -340,8 +352,14 @@
     (define/public (move-down)
       (set! view-rotx (- view-rotx 5.0))
       (refresh))
+
+    (define/public (slide-left)
+      (set! view-slide (+ view-slide 5.0))
+      (refresh))
     
-    
+    (define/public (slide-right)
+      (set! view-slide (- view-slide 5.0))
+      (refresh))
     
     (define/override (on-size width height)
       (with-gl-context
@@ -411,6 +429,7 @@
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
            
             (gl-push-matrix)
+            (gl-translate view-slide  0.0 1.0)
             (gl-rotate view-rotx 1.0 0.0 0.0)
             (gl-rotate view-roty 0.0 1.0 0.0)
             (gl-rotate view-rotz 0.0 0.0 1.0)
