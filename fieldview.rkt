@@ -25,27 +25,40 @@
                       (define/override (on-focus event)
                         [displayln "focus"])
                       (define/override (on-subwindow-char win event)
-                        ;[displayln "Caught key event"]
+                        
                         [let [[key [send event get-key-code]]]
+                          [printf "Caught key event ~a~n" key]
+                          [when [equal? key 'release]
+                            [send display-gl cease-display-movement]]
                           [when [equal? key #\x]
                             [exit]]
+                          [when [equal? key #\ ]
+                            [set! paused
+                                  [if paused
+                                      #f
+                                      #t]]]
                           [when [equal? key #\a]
-                            [send display-gl slide-left]]
+                            [send display-gl continuous-display-movement 'slide-left]]
                           [when [equal? key #\d]
-                            [send display-gl slide-right]]
-                              [when [equal? key #\w]
-                            [send display-gl zoom-in]]
+                            [send display-gl continuous-display-movement 'slide-right]]
+                          
+                          [when [equal? key #\w]
+                            [send display-gl continuous-display-movement 'zoom-in]]
                           [when [equal? key #\s]
-                            [send display-gl zoom-out]]
+                            [send display-gl continuous-display-movement 'zoom-out]]
                           
                           [when [equal? key #\q]  
-                            [send display-gl move-left]]
+                            
+                            [send display-gl continuous-display-movement 'spin-left]]
                           [when [equal? key #\e]
-                            [send display-gl move-right]]
+                            [send display-gl continuous-display-movement 'spin-right]
+                            ]
                           [when [equal? key #\r]
-                            [send display-gl move-up]]
+                            [send display-gl continuous-display-movement 'spin-up]
+                            ]
                           [when [equal? key #\f]
-                            [send display-gl move-down]]])
+                            [send display-gl continuous-display-movement 'spin-down]
+                            ]])
                       
                       (define/override (on-subwindow-event win event)
                         ;[writeln "Caught mouse event"]
@@ -90,7 +103,7 @@
 ;                             ))))
 (define count 0)
 
-
+[define paused #t]
 [random-seed 3]
 [define [vec-angle v1 v2]
   (match-let ([(list x1 y1 z1) v1]
@@ -274,51 +287,53 @@
   ;                       ]
   ;                     targets mans [iota [length targets]]]
   ;        ]
-  [set! mans (map (lambda (v  colour i)
-                    ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                    ;[displayln jobs]
-                    ;[printf "~a, ~a, ~a~n" v target colour]
-                    [letrec [[jobqueue [second v]]
-                             [position [first v]]]
-                      [if [not [empty? jobqueue]]
-                          [letrec [[thisjob [car jobqueue]]
-                                   [target [second thisjob]]]
-                            [set! selected i]
-                            [case [car thisjob]
-                              ['moveTo
-                               [if [equal? position [second thisjob]]
-                                   [let [[newjobs  [cdr jobqueue]]]
-                                     ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                     [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
-                                     [list [first v]
-                                           newjobs]]
-                                   [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
-                                         jobqueue]]]
-                              ['pickUp
-                               [begin
-                                 [set! boxes [remove-from-list [second thisjob] boxes]]
-                                 [list [first v] [cdr jobqueue]]]]
-                              ['drop
-                               [begin
-                                 [set! boxes [cons [second thisjob] boxes]]
-                                 [list [first v] [cdr jobqueue]]]]
-                              [else v]]]
+  [when [not paused]
+    [set! mans (map (lambda (v  colour i)
+                      ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
+                      ;[displayln jobs]
+                      ;[printf "~a, ~a, ~a~n" v target colour]
+                    
+                      [letrec [[jobqueue [second v]]
+                               [position [first v]]]
+                        [if [not [empty? jobqueue]]
+                            [letrec [[thisjob [car jobqueue]]
+                                     [target [second thisjob]]]
+                              [set! selected i]
+                              [case [car thisjob]
+                                ['moveTo
+                                 [if [equal? position [second thisjob]]
+                                     [let [[newjobs  [cdr jobqueue]]]
+                                       ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
+                                       [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
+                                       [list [first v]
+                                             newjobs]]
+                                     [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
+                                           jobqueue]]]
+                                ['pickUp
+                                 [begin
+                                   [set! boxes [remove-from-list [second thisjob] boxes]]
+                                   [list [first v] [cdr jobqueue]]]]
+                                ['drop
+                                 [begin
+                                   [set! boxes [cons [second thisjob] boxes]]
+                                   [list [first v] [cdr jobqueue]]]]
+                                [else v]]]
                                 
                         
-                          [list [car v]
-                                [if [not [empty? pending-jobs]]
-                                    [let [[newjob [car pending-jobs]]]
+                            [list [car v]
+                                  [if [not [empty? pending-jobs]]
+                                      [let [[newjob [car pending-jobs]]]
                                 
-                                      [set! pending-jobs [cdr pending-jobs]]
-                                      [printf "pending-jobs: ~a~n" pending-jobs]
+                                        [set! pending-jobs [cdr pending-jobs]]
+                                        [printf "pending-jobs: ~a~n" pending-jobs]
                                 
-                                      [printf "2 Moving to new job ~a~n"  newjob]
-                                      newjob]
-                                    '[]]
-                                ]
-                          ]
-                      ])
-                  mans  colours [iota [length mans]])]
+                                        [printf "2 Moving to new job ~a~n"  newjob]
+                                        newjob]
+                                      '[]]
+                                  ]
+                            ]
+                        ])
+                    mans  colours [iota [length mans]])]]
 
   ]
 
@@ -334,6 +349,7 @@
     (define view-rotx 20.0)
     (define view-roty 30.0)
     (define view-rotz 0.0)
+    [define display-movement #f]
     
    
   
@@ -342,6 +358,14 @@
     
     (define/public (run)
       (set! step? #t)
+      (refresh))
+
+    (define/public (continuous-display-movement action)
+      [set! display-movement action]
+      (refresh))
+
+    (define/public (cease-display-movement)
+      [set! display-movement #f]
       (refresh))
     
     (define/public (move-left)
@@ -368,7 +392,7 @@
       (set! view-slide-horiz (- view-slide-horiz 2.0))
       (refresh))
 
-        (define/public (zoom-in)
+    (define/public (zoom-in)
       (set! zoom-level (+ zoom-level 2.0))
       (refresh))
     
@@ -442,14 +466,40 @@
                   ]]
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
-           
+[let [[ui-speed 0.15]]
+            [case display-movement
+              ['spin-left
+               (set! view-roty (+ view-roty [* ui-speed 5.0]))]
+
+              ('spin-right
+               (set! view-roty (- view-roty [* ui-speed 5.0])))
+    
+              ('spin-up
+               (set! view-rotx (+ view-rotx [* ui-speed 5.0])))
+    
+              ('spin-down
+               (set! view-rotx (- view-rotx [* ui-speed 5.0])))
+
+              ('slide-left
+               (set! view-slide-horiz (+ view-slide-horiz [* ui-speed 1.0])))
+    
+              ('slide-right
+               (set! view-slide-horiz (- view-slide-horiz [* ui-speed 1.0])))
+
+              ('zoom-in
+               (set! zoom-level (+ zoom-level [* ui-speed 2.0])))
+    
+              ('zoom-out
+               (set! zoom-level (- zoom-level [* ui-speed 2.0])))
+              ]]
+            
             (gl-push-matrix)
             (gl-translate view-slide-horiz  0.0 zoom-level)
             
             (gl-rotate view-rotx 1.0 0.0 0.0)
             (gl-rotate view-roty 0.0 1.0 0.0)
             (gl-rotate view-rotz 0.0 0.0 1.0)
-            [do-paint]
+            [do-paint ]
             (gl-pop-matrix)
             (swap-gl-buffers)
             (gl-flush)
