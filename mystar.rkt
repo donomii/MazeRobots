@@ -206,4 +206,4 @@ hash-map
 ;[find-path [array->mutable-array [test-map-2]] '[4 3] '[0 0]]
 ;[find-path [array->mutable-array [test-map-1]] '[7 7] '[1 1]]
 ;[find-path [array->mutable-array [test-map-3]] '[19 19] '[0 0]]
-[find-path [array->mutable-array [test-map-4]] '[19 19] '[0 0]]
+;[find-path [array->mutable-array [test-map-4]] '[19 19] '[0 0]]
