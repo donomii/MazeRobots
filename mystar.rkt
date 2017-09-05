@@ -139,7 +139,7 @@
 
 [define [doThing smap path start return]
   [hash-set! closed [car path] 1]
-  [showmap smap path closed][displayln ""]
+  ;[showmap smap path closed][displayln ""]
   
   ;[printf "Score: ~a, path: ~a~n"  [lineScore smap path start] path]
   [if [equal? [car path] start]
