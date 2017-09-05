@@ -16,15 +16,15 @@
                              9001
                              1])
              (arr:matrix [
-               [1 1 1 1 1 1 1 1 1]
-               [1 1 1 1 1 1 2 1 1]
-               [1 1 1 1 2 2 2 1 1]
-               [1 2 1 1 1 1 2 1 1]
-               [1 2 2 2 2 2 2 2 2]
-               [1 2 1 1 1 1 1 1 2]
-               [1 2 1 1 1 1 1 1 1]
-               [1 2 1 1 1 1 1 1 1]
-               [1 1 1 1 1 1 1 1 1]])))
+                          [1 1 1 1 1 1 1 1 1]
+                          [1 1 1 1 1 1 2 1 1]
+                          [1 1 1 1 2 2 2 1 1]
+                          [1 2 1 1 1 1 2 1 1]
+                          [1 2 2 2 2 2 2 2 2]
+                          [1 2 1 1 1 1 1 1 2]
+                          [1 2 1 1 1 1 1 1 1]
+                          [1 2 1 1 1 1 1 1 1]
+                          [1 1 1 1 1 1 1 1 1]])))
 
 [define [test-map-3]
   (arr:build-matrix 20 20 (λ (x y) [if [> (random 101) 50] 9001 1]))
@@ -35,21 +35,21 @@
                              9001
                              1])
              
-  (arr:matrix [
-               [0 0 0 0]
-               [1 1 1 0]
-               [0 0 0 0]
-               [0 1 1 1]
-               [0 0 0 0]
-               ])))
+             (arr:matrix [
+                          [0 0 0 0]
+                          [1 1 1 0]
+                          [0 0 0 0]
+                          [0 1 1 1]
+                          [0 0 0 0]
+                          ])))
 
 [define [test-map-4]
   (array-map (lambda (x) [if [equal? x #\*]
                              9001
                              1])
   
-[arr:list->matrix 21 22 [string->list
-"
+             [arr:list->matrix 21 22 [string->list
+                                      "
 *********************
   *   *   *   *   * *
 * * * * * * * * * * *
@@ -71,7 +71,7 @@
 *** * * *** * * * * *
 *   *     *   *   *  
 *********************"]
-  ])]
+                               ])]
 
 
 [define closed [make-hash]]
@@ -98,8 +98,8 @@
 [define [square x] [* x x]]
 [define [lineScore scoremap path end]
   ;[printf "linscore ~a: ~a~n" path
-         ; [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
-         ;     [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]]
+  ; [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
+  ;     [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]]
   
   [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
       [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]
@@ -107,8 +107,8 @@
 
 [define [mapScore scoremap path end]
   ;[printf "mapscore ~a: ~a~n" path [+
-                                    ;[sqrt [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
-                                    ;]]
+  ;[sqrt [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
+  ;]]
   [+
    [sqrt [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
    ]
@@ -160,35 +160,36 @@
         [if [empty? new-paths]
             '[]
             [map [lambda [a-path] [doThing smap a-path start return]] [sort  new-paths < #:key [lambda [l] [+ [lineScore smap l start] [/ [mapScore smap l start] 1000000]]]]]
-        ]]]]
+            ]]]]
 
 
 
 [define [showmap bmap path closed]
   [let [[amap [mutable-array-copy bmap]]]
-  [map [lambda [p] [array-set! amap [apply vector p] -1]] path]
+    [map [lambda [p] [array-set! amap [apply vector p] -1]] path]
     [if [not [empty? path]]
-        [array-set! amap [apply vector [car [reverse path]]] -2]
-        [array-set! amap [apply vector [reverse path]] -2]
+        [begin
+          [array-set! amap [apply vector [car [reverse path]]] -2]
+          [array-set! amap [apply vector [car path]] -2]]
         [hash-map closed [lambda [k v] [array-set! amap [apply vector k] -2]] path]
         ]
-  [map [lambda [x]
-         [map [lambda [y]
-                [begin
-                  [if [equal? -2 [array-ref amap [vector x y]]]
-                      [display "!"]
+    [map [lambda [x]
+           [map [lambda [y]
                   [begin
-                  [when [< [array-ref amap [vector x y]]0]
-                    [display "┼"]]
-                  [when [> [array-ref amap [vector x y]]9000]
-                    [display "*"]]
-                  [when [and [<= [array-ref amap [vector x y]]9000] [>= [array-ref amap [vector x y]]0]]
-                    [display "."]]]]]]
-              [iota [arr:matrix-num-cols amap]
-                    ]]
-         [displayln ""]]
-       [iota [arr:matrix-num-rows amap]]]
-  ]]
+                    [if [equal? -2 [array-ref amap [vector x y]]]
+                        [display "!"]
+                        [begin
+                          [when [< [array-ref amap [vector x y]]0]
+                            [display "┼"]]
+                          [when [> [array-ref amap [vector x y]]9000]
+                            [display "*"]]
+                          [when [and [<= [array-ref amap [vector x y]]9000] [>= [array-ref amap [vector x y]]0]]
+                            [display "."]]]]]]
+                [iota [arr:matrix-num-cols amap]
+                      ]]
+           [displayln ""]]
+         [iota [arr:matrix-num-rows amap]]]
+    ]]
 
 [define [find-path smap start end]
   [printf "Navigating matrix of size ~ax~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap]]
