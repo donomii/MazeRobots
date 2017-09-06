@@ -78,6 +78,68 @@
 (define win (new horizontal-pane% (parent topwin)))
 ;(define f win)
 
+[define maze
+  [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
+                                 9001
+                                 1])
+  
+                 [arr:list->array [vector 21 22] [string->list
+                                                  "
+*********************
+  *   *   *   *   * *
+* * * * * * * * * * *
+* * * * * * *   * * *
+* * * *** * ***** * *
+* * * *   * *     * *
+* * * * *** * ***** *
+*   * *   * * *   * *
+*** * * * * * *** * *
+*   *   *   *     * *
+* ***************** *
+*       * *         *
+* ***** * * ***** ***
+* *     *   *   * * *
+*** * ******* *** * *
+*   * *   *     *   *
+* *** * * *** * * * *
+*   * * *   * * * * *
+*** * * *** * * * * *
+*   *     *   *   *  
+*********************"]
+                                  ])]]
+[displayln maze]
+[define stringmaze "
+*********************
+  *   *   *   *   * *
+* * * * * * * * * * *
+* * * * * * *   * * *
+* * * *** * ***** * *
+* * * *   * *     * *
+* * * * *** * ***** *
+*   * *   * * *   * *
+*** * * * * * *** * *
+*   *   *   *     * *
+* ***************** *
+*       * *         *
+* ***** * * ***** ***
+* *     *   *   * * *
+*** * ******* *** * *
+*   * *   *     *   *
+* *** * * *** * * * *
+*   * * *   * * * * *
+*** * * *** * * * * *
+*   *     *   *   *  
+*********************"]
+
+[define boxes '[]]
+
+[map [lambda [x]
+       [map [lambda [y]
+              [when [> [arr:array-ref maze [vector x y]] 9000]
+                [set! boxes [cons [list x 0 y] boxes]]]
+              ] [iota 20]]
+       ] [iota 21]]
+
 [define [printmap amap]
   [map [lambda [x]
          [map [lambda [y]
@@ -169,20 +231,21 @@
 [define mans [apply append [map [lambda [x]
                                   [map [lambda [y]
                                          `[ [,x 0 ,y] []]
-                                         ] [iota 1 -2 1]]
-                                  ] [iota 1 -2 1]]]]
+                                         ] [iota 1 0 1]]
+                                  ] [iota 1 1 1]]]]
 
-[define boxes [apply append [map [lambda [x]
-                                   [map [lambda [y]
-                                          `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                          ] [iota 5 -2 1]]
-                                   ] [iota 5 -2 1]]]]
+;[define boxes [apply append [map [lambda [x]
+;                                   [map [lambda [y]
+;                                          `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
+;                                          ] [iota 5 -2 1]]
+;                                   ] [iota 5 -2 1]]]]
 
 [define colours  [map [lambda [r]
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
 [define [expand-job a-job current-loc]
+  [printf "Expanding: ~a~n" a-job]
   [case [car a-job]
     ['fetch [let [[target [second a-job]][destination [third a-job]]]
               [list
@@ -191,7 +254,11 @@
                [list 'pathTo destination]
                [list 'drop target]
                ]]]
-    ['pathTo [map [lambda [p] `[moveTo p]] [find-path map current-loc [second a-job]]]]
+    ['pathTo [begin
+               [let [[path  [find-path maze [list [first current-loc] [third current-loc]] [list [first [second a-job]] [third [second a-job]]]]]]
+                 [showmap maze path [make-hash]]
+               [printf "Expanded ~a into ~a~n" a-job path]
+                 [map [lambda [p] `[moveTo ,[list [first p] 0 [second p]]]] [reverse path]]]]]
     [else [list a-job]]
     ]
   ]
@@ -200,7 +267,9 @@
   [let [[target [list-ref boxes [random [length boxes]]]]
         [destination [list 0.0 0.0 0.0]]]
     [list
-     [list 'fetch target destination]]]]
+     ;[list 'fetch target destination]
+     [list 'pathTo [list 18 0 19]]
+     ]]]
 [printf "Starting jobs: ~a~n" pending-jobs]
 
 
@@ -240,12 +309,8 @@
   [sleep 1]
   [update-jobs]
   ]
-[thread [lambda []
-          [update-targets]
-          ]]
-[thread [lambda []
-          [update-jobs]
-          ]]
+;[thread [lambda [][update-targets]]]
+;[thread [lambda [] [update-jobs] ]]
 
 ;[define [drawTargets]
 ;  (gl-material-v 'front-and-back
@@ -268,8 +333,9 @@
                  (vector->gl-float-vector (apply vector [list 0.0 0.0 1.0 1.0])))
   [map [lambda [v]
          (gl-push-matrix)
-         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
          [gl-scale 0.3 0.3 0.3]
+         (gl-translate (list-ref v 0) (list-ref v 1)   (list-ref v 2))
+         
          [cube]
          (gl-pop-matrix)]
        boxes]
@@ -278,6 +344,7 @@
 [define [drawMans] 
   (map (lambda (v  colour i)
          (gl-push-matrix)
+         [gl-scale 0.3 0.3 0.3]
          (gl-translate (list-ref [car v] 0) (list-ref [car v] 1)   (list-ref [car v] 2))
          
          [letrec [[jobqueue [second v]]
@@ -286,6 +353,7 @@
              
              [letrec [[thisjob [car jobqueue]]
                       [target [second thisjob]]]
+               ;[printf "MoveTo: ~a~n" target]
                [set! selected i]
                [case [car thisjob]
                  ['moveTo
@@ -343,7 +411,7 @@
                     
                       [letrec [[jobqueue [second v]]
                                [position [first v]]]
-                        [displayln jobqueue]
+                        ;[printf "Jobqueue: ~a~n"  jobqueue]
                         [if [not [empty? jobqueue]]
                             [letrec [[thisjob [car jobqueue]]
                                      [target [second thisjob]]]
@@ -368,26 +436,26 @@
                                    [list [first v] [cdr jobqueue]]]]
                                 ['pathTo
                                  [begin
-                                   [printf "position: ~a pathTo: ~a~n" position target]
-                                 [if [equal? target position]
-                                     [begin
-                                       [printf "Reached pathTo goal at ~a, moving to next job~n" target]
-                                     [list [first v] [cdr jobqueue]]]
-                                 [letrec [[amap [build-map mans boxes]]
-                                          [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
-                                   [let [
-                                          [firstStep [if [> [length path] 1]
-                                                         [second path]
-                                                         [first path]]]
-                                          ;[waypoint [car path]]
-                                          ]
-                                   [printf "From: ~a to: ~a~n" [map round position] [map round target]]
-                                   [printf "path ~a~n" path]
-                                   [showmap amap path [make-hash]]
-                                   [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
-                                   ]]
+                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
+                                   [if [equal? target position]
+                                       [begin
+                                         [printf "Reached pathTo goal at ~a, moving to next job~n" target]
+                                         [list [first v] [cdr jobqueue]]]
+                                       [letrec [[amap [build-map mans boxes]]
+                                                [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
+                                         [let [
+                                               [firstStep [if [> [length path] 1]
+                                                              [second path]
+                                                              [first path]]]
+                                               ;[waypoint [car path]]
+                                               ]
+                                           [printf "From: ~a to: ~a~n" [map round position] [map round target]]
+                                           [printf "path ~a~n" path]
+                                           [showmap amap path [make-hash]]
+                                           [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
+                                           ]]
 
-                                 ]]]
+                                       ]]]
                                 [else [begin
                                         ;
                                         [printf "I don't know how to do job: ~a~n" [car thisjob]]
@@ -407,7 +475,9 @@
                                   ]
                             ]
                         ])
-                    mans  colours [iota [length mans]])]]
+                    mans  colours [iota [length mans]])]
+;    [printf "Mans: ~a~n" mans]
+    ]
 
   ]
 
