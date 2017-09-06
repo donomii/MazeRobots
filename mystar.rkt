@@ -202,10 +202,20 @@
          [iota [arr:matrix-num-rows amap]]]
     ]]
 
+[define [out-of-bounds smap e]
+  
+                                  [or
+                                   
+                                   [>= [car e] [arr:matrix-num-rows smap]]
+                                   [>= [second  e] [arr:matrix-num-cols smap]]
+                                   [< [car e] 0]
+                                   [< [second  e] 0]]]
 [define [find-path smap start end]
   [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap] start end]
-  [if [equal? start end]
-      '[]
+  [if [or [equal? start end] [out-of-bounds smap start] [out-of-bounds smap end]] 
+      [begin
+        [printf "Invalid input~n"]
+        '[]]
   [let [[closed [make-hash]]]
   [letrec [
            [path [call/cc [lambda [return] [doThing smap [list [reverse start]] [reverse end] return closed]]]]] ;reverse for row-column addressing format
