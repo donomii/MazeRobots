@@ -3,6 +3,8 @@
 (require mzlib/defmacro)
 (require scheme/class ) ;scheme/gui/base)
 [require "simple_figure.rkt"]
+[require "mystar.rkt"]
+(require (prefix-in arr: math/array))
 (require mred
          ;mzlib/class
          mzlib/math
@@ -75,6 +77,52 @@
                     [style '(metal)]))
 (define win (new horizontal-pane% (parent topwin)))
 ;(define f win)
+
+[define [printmap amap]
+  [map [lambda [x]
+         [map [lambda [y]
+                [if [> [arr:array-ref amap [vector x y]] 1]
+                    [display "O"]
+                    [display "."]
+                    ]
+                ]
+              [iota 100]]
+         [displayln ""]]
+       [iota 100]]
+  ]
+[define [drawMiniMap width height amap]
+  (for ([i [in-range width]])
+    [for [[j [in-range height]]]
+      [if [arr:array-ref amap [list->vector [list i j]]]
+          [set-gl-pixel i j '[1.0 1.0 1.0 1.0]]
+          [set-gl-pixel i j '[0.0 0.0 0.0 1.0]]]
+      ]
+    )
+  ]
+[define [falsifyMap width height amap]
+  (for ([i [in-range width]])
+    [for [[j [in-range height]]]
+      [arr:array-set! amap [vector i j] 1]
+      ]
+    )
+  ]
+[define obstacle-map 
+  [arr:array->mutable-array (arr:build-array #(100 100) [lambda [e] 1])]
+  
+  ]
+[define [build-map mans boxes]
+  [set! obstacle-map [arr:array->mutable-array (arr:build-array #(100 100) [lambda [e] 1])]]
+  ;[displayln [arr:mutable-array-data obstacle-map]]
+  [map [lambda [b] [arr:array-set! obstacle-map [vector [+ 50 [first b]] [+ 50 [third b]]] 9001]] boxes]
+  ;  [map [lambda [v]
+  ;         [let [[m [first v]]]
+  ;           [arr:array-set! obstacle-map [vector [inexact->exact [round [+ 50 [first m]]]] [inexact->exact [round [+ 50 [third m]]]]] #t]
+  ;           ]] mans]
+  ;[printmap omap]
+  ;[drawMiniMap 100 100 obstacle-map]
+  obstacle-map
+  ]
+
 (define pic (make-object bitmap%  10 10 ))
 ;(send pic load-file "C:/Users/user/Documents/My Dropbox/3danneal/base0.png" )
 ;(define bdc (new bitmap-dc% [bitmap pic]))
@@ -122,7 +170,7 @@
                                   [map [lambda [y]
                                          `[ [,x 0 ,y] []]
                                          ] [iota 1 -2 1]]
-                                  ] [iota 2 -2 1]]]]
+                                  ] [iota 1 -2 1]]]]
 
 [define boxes [apply append [map [lambda [x]
                                    [map [lambda [y]
@@ -134,16 +182,26 @@
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
+[define [expand-job a-job current-loc]
+  [case [car a-job]
+    ['fetch [let [[target [second a-job]][destination [third a-job]]]
+              [list
+               [list 'pathTo target]
+               [list 'pickUp target]
+               [list 'pathTo destination]
+               [list 'drop target]
+               ]]]
+    ['pathTo [map [lambda [p] `[moveTo p]] [find-path map current-loc [second a-job]]]]
+    [else [list a-job]]
+    ]
+  ]
+
 [define pending-jobs
   [let [[target [list-ref boxes [random [length boxes]]]]
         [destination [list 0.0 0.0 0.0]]]
     [list
-     [list
-      [list 'moveTo target]
-      [list 'pickUp target]
-      [list 'moveTo destination]
-      [list 'drop target]
-      ]]]]
+     [list 'fetch target destination]]]]
+[printf "Starting jobs: ~a~n" pending-jobs]
 
 
 [define target-list [apply append [map [lambda [x]
@@ -163,13 +221,8 @@
   [let [[newbox `[,[- [random 10] 5] 0 ,[- [random 10] 5]]]
         [destination [list 0.0 0.0 0.0]]]
     [set! boxes [cons  newbox boxes]]
-    [set! pending-jobs [cons 
-                        [list
-                         [list 'moveTo newbox]
-                         [list 'pickUp newbox]
-                         [list 'moveTo destination]
-                         [list 'drop destination]
-                         ]
+    [set! pending-jobs [cons
+                        `[fetch ,newbox ,destination]
                         pending-jobs]]
     ]
   [sleep 10]
@@ -178,18 +231,12 @@
 
 [define [update-jobs]
   [when [empty? pending-jobs]
-    
     [set! pending-jobs [let [[target [random-from-list boxes]]
                              [destination [list 0.0 0.0 0.0]]]
                          [list
-                          [list
-                           [list 'moveTo target]
-                           [list 'pickUp target]
-                           [list 'moveTo destination]
-                           [list 'drop destination]
-                           ]]]
-          ]
-    ]
+                          `[fetch ,target ,destination]]]]
+    [printf "Added job, list now: ~a~n" pending-jobs]]
+          
   [sleep 1]
   [update-jobs]
   ]
@@ -236,6 +283,7 @@
          [letrec [[jobqueue [second v]]
                   [position [first v]]]
            [when [not [empty? jobqueue]]
+             
              [letrec [[thisjob [car jobqueue]]
                       [target [second thisjob]]]
                [set! selected i]
@@ -290,11 +338,12 @@
   [when [not paused]
     [set! mans (map (lambda (v  colour i)
                       ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                      ;[displayln jobs]
+                      
                       ;[printf "~a, ~a, ~a~n" v target colour]
                     
                       [letrec [[jobqueue [second v]]
                                [position [first v]]]
+                        [displayln jobqueue]
                         [if [not [empty? jobqueue]]
                             [letrec [[thisjob [car jobqueue]]
                                      [target [second thisjob]]]
@@ -317,18 +366,43 @@
                                  [begin
                                    [set! boxes [cons [second thisjob] boxes]]
                                    [list [first v] [cdr jobqueue]]]]
-                                [else v]]]
+                                ['pathTo
+                                 [begin
+                                   [printf "position: ~a pathTo: ~a~n" position target]
+                                 [if [equal? target position]
+                                     [begin
+                                       [printf "Reached pathTo goal at ~a, moving to next job~n" target]
+                                     [list [first v] [cdr jobqueue]]]
+                                 [letrec [[amap [build-map mans boxes]]
+                                          [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
+                                   [let [
+                                          [firstStep [if [> [length path] 1]
+                                                         [second path]
+                                                         [first path]]]
+                                          ;[waypoint [car path]]
+                                          ]
+                                   [printf "From: ~a to: ~a~n" [map round position] [map round target]]
+                                   [printf "path ~a~n" path]
+                                   [showmap amap path [make-hash]]
+                                   [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
+                                   ]]
+
+                                 ]]]
+                                [else [begin
+                                        ;
+                                        [printf "I don't know how to do job: ~a~n" [car thisjob]]
+                                        v]]]]
                                 
                         
                             [list [car v]
                                   [if [not [empty? pending-jobs]]
                                       [let [[newjob [car pending-jobs]]]
-                                
+                                        [printf "pending-jobs: ~a~n" pending-jobs]
                                         [set! pending-jobs [cdr pending-jobs]]
                                         [printf "pending-jobs: ~a~n" pending-jobs]
                                 
                                         [printf "2 Moving to new job ~a~n"  newjob]
-                                        newjob]
+                                        [expand-job newjob position]]
                                       '[]]
                                   ]
                             ]
@@ -466,32 +540,32 @@
                   ]]
             (gl-clear-color 0.0 0.0 0.0 0.0)
             (gl-clear 'color-buffer-bit 'depth-buffer-bit)
-[let [[ui-speed 0.15]]
-            [case display-movement
-              ['spin-left
-               (set! view-roty (+ view-roty [* ui-speed 5.0]))]
+            [let [[ui-speed 0.15]]
+              [case display-movement
+                ['spin-left
+                 (set! view-roty (+ view-roty [* ui-speed 5.0]))]
 
-              ('spin-right
-               (set! view-roty (- view-roty [* ui-speed 5.0])))
+                ('spin-right
+                 (set! view-roty (- view-roty [* ui-speed 5.0])))
     
-              ('spin-up
-               (set! view-rotx (+ view-rotx [* ui-speed 5.0])))
+                ('spin-up
+                 (set! view-rotx (+ view-rotx [* ui-speed 5.0])))
     
-              ('spin-down
-               (set! view-rotx (- view-rotx [* ui-speed 5.0])))
+                ('spin-down
+                 (set! view-rotx (- view-rotx [* ui-speed 5.0])))
 
-              ('slide-left
-               (set! view-slide-horiz (+ view-slide-horiz [* ui-speed 1.0])))
+                ('slide-left
+                 (set! view-slide-horiz (+ view-slide-horiz [* ui-speed 1.0])))
     
-              ('slide-right
-               (set! view-slide-horiz (- view-slide-horiz [* ui-speed 1.0])))
+                ('slide-right
+                 (set! view-slide-horiz (- view-slide-horiz [* ui-speed 1.0])))
 
-              ('zoom-in
-               (set! zoom-level (+ zoom-level [* ui-speed 2.0])))
+                ('zoom-in
+                 (set! zoom-level (+ zoom-level [* ui-speed 2.0])))
     
-              ('zoom-out
-               (set! zoom-level (- zoom-level [* ui-speed 2.0])))
-              ]]
+                ('zoom-out
+                 (set! zoom-level (- zoom-level [* ui-speed 2.0])))
+                ]]
             
             (gl-push-matrix)
             (gl-translate view-slide-horiz  0.0 zoom-level)
@@ -620,6 +694,16 @@
 ;                         (glReadPixels x y  1 1 GL_BLUE GL_UNSIGNED_BYTE gvec)
 ;                         (glReadPixels x y  1 1 GL_GREEN GL_UNSIGNED_BYTE bvec)
 ;                       [map [lambda [channel] [cvector-ref channel 0]]  [list rvec gvec bvec]])))
+
+
+
+
+(define set-gl-pixel (lambda (x y col)
+                       [glWindowPos2f x y]
+                       (glDrawPixels  1 1 GL_RGBA GL_UNSIGNED_BYTE [list->gl-float-vector col])
+                       ))
+
+
 (define get-gl-pixel (lambda (x y) 
                        (letrec [[rvec (make-cvector _ubyte (* pic-width (add1 pic-height)))]]
                                 
