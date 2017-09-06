@@ -8,6 +8,18 @@
 
 ;So it doesn't always give the shortest path, but it does run nice and fast, since it doesn't have to maintain a priority queue.
 
+
+; Use: [find-path map start end]
+
+; start, end: lists of two elements, the coordinates of the start and end points
+; map: an array of numbers >0, representing the cost of moving through the square.  If the cost is over 9000, that square can never
+;      be crossed.  If there is no path from start to end, find-path will return an empty list
+
+;Example:
+;
+; (build-array 20 20 (λ (x y) [if [> (random 101) 50] 9001 1]))
+
+[provide find-path showmap]
 (require (prefix-in arr: math/matrix))
 (require math/array)
 [require srfi/1]
@@ -191,19 +203,21 @@
     ]]
 
 [define [find-path smap start end]
-  ;[printf "Navigating matrix of size ~ax~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap]]
+  [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap] start end]
+  [if [equal? start end]
+      '[]
   [let [[closed [make-hash]]]
   [letrec [
-           [path [call/cc [lambda [return] [doThing smap [list start] end return closed]]]]]
+           [path [call/cc [lambda [return] [doThing smap [list [reverse start]] [reverse end] return closed]]]]] ;reverse for row-column addressing format
     ;[displayln "calculated path"]
     
     ;[showmap smap path closed]
     ;[not [empty? path]]
-    path]]]
+    path]]]]
 
 
-
-[check-equal? [find-path [array->mutable-array [test-map-2]] '[4 3] '[0 0]] '((0 0) (0 1) (0 2) (0 3) (1 3) (2 3) (2 2) (2 1) (2 0) (3 0) (4 0) (4 1) (4 2) (4 3)) "Check a simple map"]
+'[
+[check-equal? [find-path [array->mutable-array [test-map-2]] '[3 4] '[0 0]] '((0 0) (0 1) (0 2) (0 3) (1 3) (2 3) (2 2) (2 1) (2 0) (3 0) (4 0) (4 1) (4 2) (4 3)) "Check a simple map"]
 ;[find-path [array->mutable-array [test-map-1]] '[7 7] '[1 1]]
 ;[find-path [array->mutable-array [test-map-3]] '[19 19] '[0 0]]
 [check-equal? [find-path [array->mutable-array [test-map-4]] '[19 19] '[0 0]] '((0 0)
@@ -269,3 +283,4 @@
   (19 17)
   (19 18)
   (19 19)) "Check a big maze"]
+]
