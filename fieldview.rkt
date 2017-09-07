@@ -5,6 +5,8 @@
 [require "simple_figure.rkt"]
 [require "mystar.rkt"]
 (require (prefix-in arr: math/array))
+[require "jobs.rkt"]
+[require "scene.rkt"]
 (require mred
          ;mzlib/class
          mzlib/math
@@ -78,67 +80,7 @@
 (define win (new horizontal-pane% (parent topwin)))
 ;(define f win)
 
-[define maze
-  [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
-                                 9001
-                                 1])
-  
-                 [arr:list->array [vector 21 22] [string->list
-                                                  "
-*********************
-  *   *   *   *   * *
-* * * * * * * * * * *
-* * * * * * *   * * *
-* * * *** * ***** * *
-* * * *   * *     * *
-* * * * *** * ***** *
-*   * *   * * *   * *
-*** * * * * * *** * *
-*   *   *   *     * *
-* ***************** *
-*       * *         *
-* ***** * * ***** ***
-* *     *   *   * * *
-*** * ******* *** * *
-*   * *   *     *   *
-* *** * * *** * * * *
-*   * * *   * * * * *
-*** * * *** * * * * *
-*   *     *   *   *  
-*********************"]
-                                  ])]]
-[displayln maze]
-[define stringmaze "
-*********************
-  *   *   *   *   * *
-* * * * * * * * * * *
-* * * * * * *   * * *
-* * * *** * ***** * *
-* * * *   * *     * *
-* * * * *** * ***** *
-*   * *   * * *   * *
-*** * * * * * *** * *
-*   *   *   *     * *
-* ***************** *
-*       * *         *
-* ***** * * ***** ***
-* *     *   *   * * *
-*** * ******* *** * *
-*   * *   *     *   *
-* *** * * *** * * * *
-*   * * *   * * * * *
-*** * * *** * * * * *
-*   *     *   *   *  
-*********************"]
 
-[define boxes '[]]
-
-[map [lambda [x]
-       [map [lambda [y]
-              [when [> [arr:array-ref maze [vector x y]] 9000]
-                [set! boxes [cons [list x 0 y] boxes]]]
-              ] [iota 20]]
-       ] [iota 21]]
 
 [define [printmap amap]
   [map [lambda [x]
@@ -228,11 +170,7 @@
       ;[/ [* a 180] 3.14159]
       a
       ])]
-[define mans [apply append [map [lambda [x]
-                                  [map [lambda [y]
-                                         `[ [,x 0 ,y] []]
-                                         ] [iota 1 0 1]]
-                                  ] [iota 1 1 1]]]]
+
 
 ;[define boxes [apply append [map [lambda [x]
 ;                                   [map [lambda [y]
@@ -244,27 +182,10 @@
                         ;`[,[random] ,[random] ,[random]  1.0]
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
-[define [expand-job a-job current-loc]
-  [printf "Expanding: ~a~n" a-job]
-  [case [car a-job]
-    ['fetch [let [[target [second a-job]][destination [third a-job]]]
-              [list
-               [list 'pathTo target]
-               [list 'pickUp target]
-               [list 'pathTo destination]
-               [list 'drop target]
-               ]]]
-    ['pathTo [begin
-               [let [[path  [find-path maze [list [first current-loc] [third current-loc]] [list [first [second a-job]] [third [second a-job]]]]]]
-                 [showmap maze path [make-hash]]
-               [printf "Expanded ~a into ~a~n" a-job path]
-                 [map [lambda [p] `[moveTo ,[list [first p] 0 [second p]]]] [reverse path]]]]]
-    [else [list a-job]]
-    ]
-  ]
+
 
 [define pending-jobs
-  [let [[target [list-ref boxes [random [length boxes]]]]
+  [let [[target [list-ref [scene-get 'walls] [random [length [scene-get 'walls]]]]]
         [destination [list 0.0 0.0 0.0]]]
     [list
      ;[list 'fetch target destination]
@@ -289,7 +210,7 @@
 [define [update-targets]
   [let [[newbox `[,[- [random 10] 5] 0 ,[- [random 10] 5]]]
         [destination [list 0.0 0.0 0.0]]]
-    [set! boxes [cons  newbox boxes]]
+    [scene-set! 'walls [cons  newbox [scene-get 'walls]]]
     [set! pending-jobs [cons
                         `[fetch ,newbox ,destination]
                         pending-jobs]]
@@ -300,7 +221,7 @@
 
 [define [update-jobs]
   [when [empty? pending-jobs]
-    [set! pending-jobs [let [[target [random-from-list boxes]]
+    [set! pending-jobs [let [[target [random-from-list [scene-get 'walls]]] ;change this to the things list, when we add things
                              [destination [list 0.0 0.0 0.0]]]
                          [list
                           `[fetch ,target ,destination]]]]
@@ -338,7 +259,7 @@
          
          [cube]
          (gl-pop-matrix)]
-       boxes]
+       [scene-get 'walls]]
   ]
 
 [define [drawMans] 
@@ -376,7 +297,7 @@
          (gl-pop-matrix)
                  
          )
-       mans  colours [iota [length mans]])
+       [scene-get 'mans]  colours [iota [length [scene-get 'mans]]])
   ]
 [define [replace-in-list old new list]
   [map [lambda [e]
@@ -404,7 +325,7 @@
   ;                     targets mans [iota [length targets]]]
   ;        ]
   [when [not paused]
-    [set! mans (map (lambda (v  colour i)
+    [scene-set! 'mans (map (lambda (v  colour i)
                       ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
                       
                       ;[printf "~a, ~a, ~a~n" v target colour]
@@ -428,11 +349,11 @@
                                            jobqueue]]]
                                 ['pickUp
                                  [begin
-                                   [set! boxes [remove-from-list [second thisjob] boxes]]
+                                   ;[set! boxes [remove-from-list [second thisjob] boxes]] change to things, when we add things
                                    [list [first v] [cdr jobqueue]]]]
                                 ['drop
                                  [begin
-                                   [set! boxes [cons [second thisjob] boxes]]
+                                   ;[set! boxes [cons [second thisjob] boxes]] change to things, when we add things
                                    [list [first v] [cdr jobqueue]]]]
                                 ['pathTo
                                  [begin
@@ -441,7 +362,7 @@
                                        [begin
                                          [printf "Reached pathTo goal at ~a, moving to next job~n" target]
                                          [list [first v] [cdr jobqueue]]]
-                                       [letrec [[amap [build-map mans boxes]]
+                                       [letrec [[amap [build-map [scene-get 'mans] [scene-set! 'walls]]]
                                                 [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
                                          [let [
                                                [firstStep [if [> [length path] 1]
@@ -470,12 +391,12 @@
                                         [printf "pending-jobs: ~a~n" pending-jobs]
                                 
                                         [printf "2 Moving to new job ~a~n"  newjob]
-                                        [expand-job newjob position]]
+                                        [expand-job newjob position [scene-get 'maze]]]
                                       '[]]
                                   ]
                             ]
                         ])
-                    mans  colours [iota [length mans]])]
+                    [scene-get 'mans]  colours [iota [length [scene-get 'mans]]])]
 ;    [printf "Mans: ~a~n" mans]
     ]
 
