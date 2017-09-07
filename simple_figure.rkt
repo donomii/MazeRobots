@@ -11,6 +11,11 @@
 
 
 
+(define-syntax njoint
+  (lambda (x)
+    (syntax-case x ()
+      [(_ x y z ...)
+       (syntax (rot x y z ...))])))
 
 [defmacro trans [ xx y z thunk ]
   ;[lambda []

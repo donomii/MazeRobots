@@ -7,6 +7,7 @@
 (require (prefix-in arr: math/array))
 [require "jobs.rkt"]
 [require "scene.rkt"]
+[require "utility_functions.rkt"]
 (require mred
          ;mzlib/class
          mzlib/math
@@ -82,18 +83,7 @@
 
 
 
-[define [printmap amap]
-  [map [lambda [x]
-         [map [lambda [y]
-                [if [> [arr:array-ref amap [vector x y]] 1]
-                    [display "O"]
-                    [display "."]
-                    ]
-                ]
-              [iota 100]]
-         [displayln ""]]
-       [iota 100]]
-  ]
+
 [define [drawMiniMap width height amap]
   (for ([i [in-range width]])
     [for [[j [in-range height]]]
@@ -103,29 +93,8 @@
       ]
     )
   ]
-[define [falsifyMap width height amap]
-  (for ([i [in-range width]])
-    [for [[j [in-range height]]]
-      [arr:array-set! amap [vector i j] 1]
-      ]
-    )
-  ]
-[define obstacle-map 
-  [arr:array->mutable-array (arr:build-array #(100 100) [lambda [e] 1])]
-  
-  ]
-[define [build-map mans boxes]
-  [set! obstacle-map [arr:array->mutable-array (arr:build-array #(100 100) [lambda [e] 1])]]
-  ;[displayln [arr:mutable-array-data obstacle-map]]
-  [map [lambda [b] [arr:array-set! obstacle-map [vector [+ 50 [first b]] [+ 50 [third b]]] 9001]] boxes]
-  ;  [map [lambda [v]
-  ;         [let [[m [first v]]]
-  ;           [arr:array-set! obstacle-map [vector [inexact->exact [round [+ 50 [first m]]]] [inexact->exact [round [+ 50 [third m]]]]] #t]
-  ;           ]] mans]
-  ;[printmap omap]
-  ;[drawMiniMap 100 100 obstacle-map]
-  obstacle-map
-  ]
+
+
 
 (define pic (make-object bitmap%  10 10 ))
 ;(send pic load-file "C:/Users/user/Documents/My Dropbox/3danneal/base0.png" )
@@ -157,19 +126,7 @@
 
 [define paused #t]
 [random-seed 3]
-[define [vec-angle v1 v2]
-  (match-let ([(list x1 y1 z1) v1]
-              [(list x2 y2 z2) v2])
-    [letrec [[dotprod [+ [* x1 x2] [* y1 y2] [* z1 z2]]]
-             [mag1 [sqrt [+ [* x1 x1] [* y1 y1] [* z1 z1]]]]
-             [mag2 [sqrt [+ [* x2 x2] [* y2 y2] [* z2 z2]]]]
-             [cosa [/ dotprod [+ 0.000001 [* mag1 mag2]]]]
-             [a [acos cosa]]
-             ]
-      ;[displayln [/ [* a 180] 3.14159]]
-      ;[/ [* a 180] 3.14159]
-      a
-      ])]
+
 
 
 ;[define boxes [apply append [map [lambda [x]
@@ -178,58 +135,26 @@
 ;                                          ] [iota 5 -2 1]]
 ;                                   ] [iota 5 -2 1]]]]
 
-[define colours  [map [lambda [r]
-                        ;`[,[random] ,[random] ,[random]  1.0]
-                        [list [/ r 25] 1.0 1.0 1.0]
-                        ] [iota 25]]]
-
-
-[define pending-jobs
-  [let [[target [list-ref [scene-get 'walls] [random [length [scene-get 'walls]]]]]
-        [destination [list 0.0 0.0 0.0]]]
-    [list
-     ;[list 'fetch target destination]
-     [list 'pathTo [list 18 0 19]]
-     ]]]
-[printf "Starting jobs: ~a~n" pending-jobs]
-
-
-[define target-list [apply append [map [lambda [x]
-                                         [map [lambda [y]
-                                                `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                                ] [iota 2 -20 8]]
-                                         ] [iota 4 -20 8]]]
-  ]
 
 
 
-[define [random-from-list target-list]
-  [list-ref target-list [random [length target-list]]]
-  ]
 
-[define [update-targets]
-  [let [[newbox `[,[- [random 10] 5] 0 ,[- [random 10] 5]]]
-        [destination [list 0.0 0.0 0.0]]]
-    [scene-set! 'walls [cons  newbox [scene-get 'walls]]]
-    [set! pending-jobs [cons
-                        `[fetch ,newbox ,destination]
-                        pending-jobs]]
-    ]
-  [sleep 10]
-  [update-targets]
-  ]
+[printf "Starting jobs: ~a~n" [scene-get 'jobs]]
 
-[define [update-jobs]
-  [when [empty? pending-jobs]
-    [set! pending-jobs [let [[target [random-from-list [scene-get 'walls]]] ;change this to the things list, when we add things
-                             [destination [list 0.0 0.0 0.0]]]
-                         [list
-                          `[fetch ,target ,destination]]]]
-    [printf "Added job, list now: ~a~n" pending-jobs]]
-          
-  [sleep 1]
-  [update-jobs]
-  ]
+
+;[define [update-jobs]
+;  [when [empty? pending-jobs]
+;    [set! pending-jobs [let [[target [random-from-list [scene-get 'walls]]] ;change this to the things list, when we add things
+;                             [destination [list 0.0 0.0 0.0]]]
+;                         [list
+;                          `[fetch ,target ,destination]]]]
+;    [printf "Added job, list now: ~a~n" pending-jobs]]
+;          
+;  [sleep 1]
+;  [update-jobs]
+;  ]
+
+
 ;[thread [lambda [][update-targets]]]
 ;[thread [lambda [] [update-jobs] ]]
 
@@ -275,7 +200,7 @@
              [letrec [[thisjob [car jobqueue]]
                       [target [second thisjob]]]
                ;[printf "MoveTo: ~a~n" target]
-               [set! selected i]
+               [scene-set! 'selected i]
                [case [car thisjob]
                  ['moveTo
                   (apply gl-rotate (fullAngle [car v] target))
@@ -297,106 +222,19 @@
          (gl-pop-matrix)
                  
          )
-       [scene-get 'mans]  colours [iota [length [scene-get 'mans]]])
+       [scene-get 'mans]  [scene-get 'colours] [iota [length [scene-get 'mans]]])
   ]
-[define [replace-in-list old new list]
-  [map [lambda [e]
-         [if [equal? e old]
-             new
-             e]]
-       list]]
-[define [remove-from-list item list]
-  [filter [lambda [e]
-            [if [equal? e item]
-                #f
-                e]]
-          list]]
+
 
 [define [do-paint]
   ;[drawTargets]
   [drawBoxes]
   ;[displayln mans]
   [drawMans]
-  ;  [set! targets [map [lambda [target man i]
-  ;                       
-  ;                       ;[second man]
-  ;                       target
-  ;                       ]
-  ;                     targets mans [iota [length targets]]]
-  ;        ]
-  [when [not paused]
-    [scene-set! 'mans (map (lambda (v  colour i)
-                      ;[map [lambda[e t] [moveTo e t [* 0.01 [lengthVec [subVec v target]]]]] v target]
-                      
-                      ;[printf "~a, ~a, ~a~n" v target colour]
-                    
-                      [letrec [[jobqueue [second v]]
-                               [position [first v]]]
-                        ;[printf "Jobqueue: ~a~n"  jobqueue]
-                        [if [not [empty? jobqueue]]
-                            [letrec [[thisjob [car jobqueue]]
-                                     [target [second thisjob]]]
-                              [set! selected i]
-                              [case [car thisjob]
-                                ['moveTo
-                                 [if [equal? position [second thisjob]]
-                                     [let [[newjobs  [cdr jobqueue]]]
-                                       ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                       [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
-                                       [list [first v]
-                                             newjobs]]
-                                     [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
-                                           jobqueue]]]
-                                ['pickUp
-                                 [begin
-                                   ;[set! boxes [remove-from-list [second thisjob] boxes]] change to things, when we add things
-                                   [list [first v] [cdr jobqueue]]]]
-                                ['drop
-                                 [begin
-                                   ;[set! boxes [cons [second thisjob] boxes]] change to things, when we add things
-                                   [list [first v] [cdr jobqueue]]]]
-                                ['pathTo
-                                 [begin
-                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
-                                   [if [equal? target position]
-                                       [begin
-                                         [printf "Reached pathTo goal at ~a, moving to next job~n" target]
-                                         [list [first v] [cdr jobqueue]]]
-                                       [letrec [[amap [build-map [scene-get 'mans] [scene-set! 'walls]]]
-                                                [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
-                                         [let [
-                                               [firstStep [if [> [length path] 1]
-                                                              [second path]
-                                                              [first path]]]
-                                               ;[waypoint [car path]]
-                                               ]
-                                           [printf "From: ~a to: ~a~n" [map round position] [map round target]]
-                                           [printf "path ~a~n" path]
-                                           [showmap amap path [make-hash]]
-                                           [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
-                                           ]]
 
-                                       ]]]
-                                [else [begin
-                                        ;
-                                        [printf "I don't know how to do job: ~a~n" [car thisjob]]
-                                        v]]]]
-                                
-                        
-                            [list [car v]
-                                  [if [not [empty? pending-jobs]]
-                                      [let [[newjob [car pending-jobs]]]
-                                        [printf "pending-jobs: ~a~n" pending-jobs]
-                                        [set! pending-jobs [cdr pending-jobs]]
-                                        [printf "pending-jobs: ~a~n" pending-jobs]
-                                
-                                        [printf "2 Moving to new job ~a~n"  newjob]
-                                        [expand-job newjob position [scene-get 'maze]]]
-                                      '[]]
-                                  ]
-                            ]
-                        ])
-                    [scene-get 'mans]  colours [iota [length [scene-get 'mans]]])]
+  [when [not paused]
+    [scene-tick]
+    
 ;    [printf "Mans: ~a~n" mans]
     ]
 
@@ -570,7 +408,7 @@
             (gl-flush)
             [when wantpix
               [printf "Got pixel: ~a~n"  [get-gl-pixel mouseX mouseY]]
-              [set! selected [matchColour [get-gl-pixel mouseX mouseY] colours]]
+              [set! selected [matchColour [get-gl-pixel mouseX mouseY] [scene-get 'colours]]]
               [printf "figure: ~a~n" selected]
               [set! wantpix #f]]
             
@@ -593,7 +431,6 @@
     
     ))
 [thread [thunk
-
          (gl-frame)
          (send topwin show #t)
          [send topwin enable #t]
@@ -601,69 +438,13 @@
          [displayln (send topwin is-enabled?)]
          ]]
 
-[define null [lambda [] [lambda [] #f]]]
 
 
-;moves number a towards number b, by c
-[define [moveTo a b c]
-  ;[printf "Moving from ~a to ~a, step ~a~n" a b c]
-  [if  [< [* [- a b] [- a b]] c]
-       b
-       [if [< a b]
-           [+ a c]
-           [- a c]]
-       ]]
 
-[define [diffcolour a b]
-  ;[printf "~a vs ~a~n" a b]
-  [apply + [map [lambda [aa bb] [abs [- aa bb]]] a b]]
-  ]
 
-[define [matchColour colour colours]
-  [if [void? colour]
-      -1
-      [let [[best  999999999]]
-        [car [reverse
-              [cons -1 [filter positive? [map [lambda [c i] [if [< [diffcolour [map [lambda [x]  [* 256 x]] c] colour] best]
-                                                                [begin
-                                                                  ;[printf "Matched: ~a against ~a~n" [map [lambda [x] [* 255 x]] c] colour]
-                                                                  [set! best [diffcolour [map [lambda [x] [* 256 x]] c] colour]]
-                                                                  i]
-                                                                -1]]
-                                              colours [iota [length colours]]]
-                    
-                               ]]]]]]]
 
-[define [normalise v]
-  (match-let ([(list x1 y1 z1) v])
-    [let [[mag1 [+ 0.0000001 [sqrt [+ [* x1 x1] [* y1 y1] [* z1 z1]]]]]]
-      [list [/ x1 mag1] [/ y1 mag1] [/ z1 mag1]]
-      ])]
 
-(define-syntax njoint
-  (lambda (x)
-    (syntax-case x ()
-      [(_ x y z ...)
-       (syntax (rot x y z ...))])))
 
-[define [crossprod u v]
-  (match-let ([(list u1 u2 u3) u]
-              [(list v1 v2 v3) v])
-    [list [- [* u2 v3] [* u3 v2]] [- [* u3 v1] [* u1 v3]] [- [* u1 v2] [* u2 v1]]])]
-
-[define [subVec a b]
-  [map [lambda [x y] [- x y]] a b]
-  ]
-[define [lengthVec a]
-  [sqrt [apply + [map [lambda [x] [* x x]] a]]]]
-
-[define [fullAngle v1 v2]
-  [letrec [[a1 [vec-angle v1 v2]]
-           [rot-axis [normalise [crossprod v1 v2]]]
-           ]
-    ;[displayln rot-axis]
-    [list [* [+ 90  a1] [/ 180 3.1415927]] [list-ref rot-axis 0][list-ref rot-axis 1][list-ref rot-axis 2] ]
-    ]]
 
 ;(define get-the-bytes
 ;  (make-gl-cached-vector
