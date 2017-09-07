@@ -128,13 +128,13 @@
                         ] [iota 25]]]
 
 [define [scene-tick]
-  [printf "Starting tick~n"]
+  ;[printf "Starting tick~n"]
   [scene-set! 'mans (map (lambda (v  colour i)
                       ;[printf "~a, ~a, ~a~n" v target colour]
                     
                       [letrec [[jobqueue [second v]]
                                [position [first v]]]
-                        [printf "Jobqueue: ~a~n"  jobqueue]
+                        ;[printf "Jobqueue: ~a~n"  jobqueue]
                         [if [not [empty? jobqueue]]
                             [letrec [[thisjob [car jobqueue]]
                                      [target [second thisjob]]]
@@ -144,7 +144,7 @@
                                  [if [equal? position [second thisjob]]
                                      [let [[newjobs  [cdr jobqueue]]]
                                        ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                       [printf "1 Moving to new job ~a because ~a equals ~a~n" newjobs position target]
+                                       [printf "1 Moving to new job ~a~n" [if [empty? newjobs] "none" [car newjobs]] ]
                                        [list [first v]
                                              newjobs]]
                                      [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
