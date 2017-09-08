@@ -1,12 +1,16 @@
 #lang racket
 [require srfi/1]
 
+; A basic(!) example
 (require (prefix-in arr: math/array))
 [require "utility_functions.rkt"]
 [require "mystar.rkt"]
 [require "jobs.rkt"]
+
+; All scenes must provide these functions
 [provide scene scene-set! scene-get scene-tick]
 
+; The initial data for the scene.  You must provide data for mans, walls, jobs and things, even if they are empty lists
 [define scene-data `[
                 [mans  . ,[apply append [map [lambda [x]
                                   [map [lambda [y]
@@ -28,7 +32,6 @@
 
 
 
-
 [define [update-things]
   [let [[newthing `[,[- [random 10] 5] 0 ,[- [random 10] 5]]]
         [destination [list 0.0 0.0 0.0]]]
@@ -42,23 +45,29 @@
   ]
               
 
+; You must provide this to grant access to the scene data
 [define [scene] scene-data]
 
+; You must provide this to grant access to the scene data
 [define [scene-get key]
   ;[displayln scene-data]
   [cdr [assoc key scene-data]]]
 
+
 [define [del-assoc key a-list] [filter [lambda [e] [not [equal? [car e] key]]] a-list]]
 
+; You must provide this to grant access to the scene data
 [define [scene-set! key value] [set! scene-data [cons [cons key value] [del-assoc key scene-data]]]]
 
-[scene-set! 'a 'b]
 
-[displayln [scene]]
-
-[scene-set! 'a 'c]
-
-[displayln [scene]]
+; Tests (make a proper test suit)
+;[scene-set! 'a 'b]
+;
+;[displayln [scene]]
+;
+;[scene-set! 'a 'c]
+;
+;[displayln [scene]]
 
 [define maze
   [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
@@ -89,29 +98,7 @@
 *   *     *   *   *  
 *********************"]
                                   ])]]
-[displayln maze]
-[define stringmaze "
-*********************
-  *   *   *   *   * *
-* * * * * * * * * * *
-* * * * * * *   * * *
-* * * *** * ***** * *
-* * * *   * *     * *
-* * * * *** * ***** *
-*   * *   * * *   * *
-*** * * * * * *** * *
-*   *   *   *     * *
-* ***************** *
-*       * *         *
-* ***** * * ***** ***
-* *     *   *   * * *
-*** * ******* *** * *
-*   * *   *     *   *
-* *** * * *** * * * *
-*   * * *   * * * * *
-*** * * *** * * * * *
-*   *     *   *   *  
-*********************"]
+
 
 [map [lambda [x]
        [map [lambda [y]
@@ -127,6 +114,8 @@
                         [list [/ r 25] 1.0 1.0 1.0]
                         ] [iota 25]]]
 
+
+
 [define [scene-tick]
   ;[printf "Starting tick~n"]
   [scene-set! 'mans (map (lambda (v  colour i)
@@ -140,15 +129,7 @@
                                      [target [second thisjob]]]
                               [scene-set! 'selected i]
                               [case [car thisjob]
-                                ['moveTo
-                                 [if [equal? position [second thisjob]]
-                                     [let [[newjobs  [cdr jobqueue]]]
-                                       ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                       [printf "1 Moving to new job ~a~n" [if [empty? newjobs] "none" [car newjobs]] ]
-                                       [list [first v]
-                                             newjobs]]
-                                     [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
-                                           jobqueue]]]
+                                
                                 ['pickUp
                                  [begin
                                    ;[set! boxes [remove-from-list [second thisjob] boxes]] change to things, when we add things
@@ -157,32 +138,9 @@
                                  [begin
                                    ;[set! boxes [cons [second thisjob] boxes]] change to things, when we add things
                                    [list [first v] [cdr jobqueue]]]]
-                                ['pathTo
-                                 [begin
-                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
-                                   [if [equal? target position]
-                                       [begin
-                                         [printf "Reached pathTo goal at ~a, moving to next job~n" target]
-                                         [list [first v] [cdr jobqueue]]]
-                                       [letrec [[amap [build-map [scene-get 'mans] [scene-set! 'walls]]]
-                                                [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
-                                         [let [
-                                               [firstStep [if [> [length path] 1]
-                                                              [second path]
-                                                              [first path]]]
-                                               ;[waypoint [car path]]
-                                               ]
-                                           [printf "From: ~a to: ~a~n" [map round position] [map round target]]
-                                           [printf "path ~a~n" path]
-                                           [showmap amap path [make-hash]]
-                                           [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
-                                           ]]
-
-                                       ]]]
+                                
                                 [else [begin
-                                        ;
-                                        [printf "I don't know how to do job: ~a~n" [car thisjob]]
-                                        v]]]]
+                                        [default-jobs v scene scene-get scene-set!]]]]]
                                 
                         
                             [list [car v]
