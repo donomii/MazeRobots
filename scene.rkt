@@ -18,10 +18,7 @@
                                          ] [iota 1 0 1]]
                                   ] [iota 1 1 1]]]]
                 [walls . []]
-                [jobs  . ,[list
-        
-     
-     [list 'pathTo [list 18 0 19]]
+                [jobs  . ,[list [list 'pathTo [list 18 0 19]]
      ]]
                 [things . ,[apply append [map [lambda [x]
                                          [map [lambda [y]

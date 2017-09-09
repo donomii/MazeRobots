@@ -44,28 +44,29 @@
                                              newjobs]]
                                      [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
                                            jobqueue]]]
-                                ['pathTo
-                                 [begin
-                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
-                                   [if [equal? target position]
-                                       [begin
-                                         [printf "Reached pathTo goal at ~a, moving to next job~n" target]
-                                         [list [first v] [cdr jobqueue]]]
-                                       [letrec [[amap [build-map [scene-get 'mans] [scene-set! 'walls]]]
-                                                [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
-                                         [let [
-                                               [firstStep [if [> [length path] 1]
-                                                              [second path]
-                                                              [first path]]]
-                                               ;[waypoint [car path]]
-                                               ]
-                                           [printf "From: ~a to: ~a~n" [map round position] [map round target]]
-                                           [printf "path ~a~n" path]
-                                           [showmap amap path [make-hash]]
-                                           [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
-                                           ]]
-
-                                       ]]]
+;                                ['pathTo
+;                                 [begin
+;                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
+;                                   [if [equal? target position]
+;                                       [begin
+;                                         [printf "Reached pathTo goal at ~a, moving to next job~n" target]
+;                                         [list [first v] [cdr jobqueue]]]
+;                                       [letrec [[amap [build-map [scene-get 'mans] [scene-set! 'walls]]]
+;                                                [path [reverse [find-path amap [map [lambda [e] [+ 50 e]] [map round [list [first position] [third position]]]] [map [lambda [e] [+ 50]] [map round [list [first target] [third target]]]]]]]]
+;                                         [let [
+;                                               [firstStep [if [> [length path] 1]
+;                                                              [second path]
+;                                                              [first path]]]
+;                                               ;[waypoint [car path]]
+;                                               ]
+;                                           [printf "From: ~a to: ~a~n" [map round position] [map round target]]
+;                                           [printf "path ~a~n" path]
+;                                           [showmap amap path [make-hash]]
+;                                           
+;                                           [list [first v] [cons `[moveTo ,[list [- [first firstStep] 50] 0 [- [second firstStep] 50]]] jobqueue]]
+;                                           ]]
+;
+;                                       ]]]
                                 [else [begin
                                         ;
                                         [printf "I don't know how to do job: ~a~n" [car thisjob]]
