@@ -187,8 +187,26 @@
        [scene-get 'walls]]
   ]
 
-[define [drawMans] 
+
+
+
+[define [drawMans]
+  
   (map (lambda (v  colour i)
+         [map [lambda [p]
+                    [when [equal? [car p] 'moveTo]
+                        [begin
+                    [gl-push-matrix]
+                    [gl-scale 0.3 0.3 0.3]
+                    [apply gl-translate [second p]]
+                    [gl-rotate 1.0 0.0 0.0 90.0]
+                    [gl-scale 0.3 0.3 0.3]
+                    (gl-material-v 'front-and-back
+                 'ambient-and-diffuse
+                 (vector->gl-float-vector (apply vector [list 1.0 1.0 1.0 1.0])))
+                    [cube]
+                    [gl-pop-matrix]]]]
+                  [second v]]
          (gl-push-matrix)
          [gl-scale 0.3 0.3 0.3]
          (gl-translate (list-ref [car v] 0) (list-ref [car v] 1)   (list-ref [car v] 2))
