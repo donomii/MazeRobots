@@ -134,7 +134,7 @@
   ]
 
 ;[define [neighbour-list] '[(-1 0) (1 0) (0 -1) (0 1) (-1 -1) (-1 1) (1 -1) (1 1)]]
-[define [neighbour-list] '[(-1 0 0) (1 0 0) (0 0 -1) (0 0 1) ]]
+[define [neighbour-list] '[(-1 0 0) (1 0 0) (0 0 -1) (0 0 1) (0 1 0) (0 -1 0)]]
 
 ;[improvePath [make-map] [basicLine start end]]
 

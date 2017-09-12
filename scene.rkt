@@ -99,6 +99,38 @@
                                                   [format "~n"] ""]]
                                   ])]]
 
+[define level2
+  [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
+                                 9001
+                                 1])
+  
+                 [arr:list->array [vector 21 21] [string->list [string-replace
+                                                  "*********************
+* *   *   *   *   * *
+* * * * * * * * * * *
+* * * * * * *   * * *
+* * * *** * ***** * *
+* * * *   * *     * *
+* * * * *** * ***** *
+*   * *   * * *   * *
+*** * * * * * *** * *
+*   *   *   *     * *
+*                   *
+*       * *         *
+* ***** * * ***** ***
+* *     *   *   * * *
+*** * ******* *** * *
+*   * *   *     *   *
+* *** * * *** * * * *
+*   * * *   * * * * *
+*** * * *** * * * * *
+*   *     *   *   * *
+*********************"
+                                                  [format "~n"] ""]]
+                                  ])]]
+
+
+
 
 
 [printf "Array width: ~a, array-height: ~a ~n" [array-width maze] [array-height maze]]
@@ -111,6 +143,14 @@
               ] [iota [+ 0 [array-height maze]]]]
        ] [iota [+ 0 [array-width maze]]]]
 
+
+[map [lambda [x]
+       [map [lambda [y]
+              [when [> [arr:array-ref level2 [vector x y]] 9000]
+                [scene-set! 'walls [cons [list [add1 x] 1 [add1 y]]  [scene-get 'walls]]]
+              [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 1 [add1 y]]] 9001]]
+              ] [iota [+ 0 [array-height level2]]]]
+       ] [iota [+ 0 [array-width level2]]]]
 
 
 
