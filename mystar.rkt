@@ -209,7 +209,8 @@
                                    [>= [car e] [arr:matrix-num-rows smap]]
                                    [>= [second  e] [arr:matrix-num-cols smap]]
                                    [< [car e] 0]
-                                   [< [second  e] 0]]]
+                                   [< [second  e] 0]
+                                   [< 9000 [array-ref smap [vector [second e] [first e]]]]]]
 [define [find-path smap start end]
   [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap] start end]
   [if [or [equal? start end] [out-of-bounds smap start] [out-of-bounds smap end]] 
@@ -219,7 +220,7 @@
   [let [[closed [make-hash]]]
   [letrec [
            [path [call/cc [lambda [return] [doThing smap [list [reverse start]] [reverse end] return closed]]]]] ;reverse for row-column addressing format
-    ;[displayln "calculated path"]
+    [displayln "calculated path"]
     
     ;[showmap smap path closed]
     ;[not [empty? path]]
