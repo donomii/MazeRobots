@@ -3,6 +3,7 @@
 
 ; A basic(!) example
 (require (prefix-in arr: math/array))
+(require math/matrix)
 [require "utility_functions.rkt"]
 [require "mystar.rkt"]
 [require "jobs.rkt"]
@@ -14,11 +15,11 @@
 [define scene-data `[
                 [mans  . ,[apply append [map [lambda [x]
                                   [map [lambda [y]
-                                         `[ [,x 0 ,y] []]
+                                         `[ [2 0 2] []]
                                          ] [iota 1 0 1]]
                                   ] [iota 1 1 1]]]]
                 [walls . []]
-                [jobs  . ,[list [list 'pathTo [list 18 0 19]]]]
+                [jobs  . ,[list [list 'pathTo [list 20 0 19]]]]
                 [things . ,[apply append [map [lambda [x]
                                          [map [lambda [y]
                                                 `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
@@ -64,15 +65,17 @@
 ;
 ;[displayln [scene]]
 
+[define level-map [arr:array->mutable-array[arr:build-array [vector 101 101] [lambda [x] 1]]]]
+[scene-set! 'level-map level-map]
+
 [define maze
   [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
                                  9001
                                  1])
   
-                 [arr:list->array [vector 21 22] [string->list
-                                                  "
-*********************
-  *   *   *   *   * *
+                 [arr:list->array [vector 21 21] [string->list [string-replace
+                                                  "*********************
+* *   *   *   *   * *
 * * * * * * * * * * *
 * * * * * * *   * * *
 * * * *** * ***** * *
@@ -90,17 +93,19 @@
 * *** * * *** * * * *
 *   * * *   * * * * *
 *** * * *** * * * * *
-*   *     *   *   *  
-*********************"]
+*   *     *   *   * *
+*********************"
+                                                  [format "~n"] ""]]
                                   ])]]
 
 
 [map [lambda [x]
        [map [lambda [y]
               [when [> [arr:array-ref maze [vector x y]] 9000]
-                [scene-set! 'walls [cons [list x 0 y] [scene-get 'walls]]]]
-              ] [iota 20]]
-       ] [iota 21]]
+                [scene-set! 'walls [cons [list [add1 x] 0 [add1 y]]  [scene-get 'walls]]]
+              [arr:array-set! [scene-get 'level-map] [vector [add1 x] [add1 y]] 9001]]
+              ] [iota [+ 0 [matrix-num-rows maze]]]]
+       ] [iota [+ 0 [matrix-num-cols maze]]]]
 
 [scene-set! 'maze maze]
 
@@ -147,7 +152,7 @@
                                         [printf "pending-jobs: ~a~n" [scene-get 'jobs]]
                                 
                                         [printf "2 Moving to new job ~a~n"  newjob]
-                                        [expand-job newjob position [scene-get 'maze]]]
+                                        [expand-job newjob position [scene-get 'level-map]]]
                                       '[]]
                                   ]
                             ]
