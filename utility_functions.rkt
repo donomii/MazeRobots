@@ -95,6 +95,10 @@
 [define [subVec a b]
   [map [lambda [x y] [- x y]] a b]
   ]
+[define [addVec a b]
+  [map [lambda [x y] [+ x y]] a b]
+  ]
+
 [define [lengthVec a]
   [sqrt [apply + [map [lambda [x] [* x x]] a]]]]
 
@@ -160,5 +164,5 @@
     ]
 
   [define [weird-to-cartesian e]
-[list [vector-ref e 1] [vector-ref  e 2] [vector-ref e 1] ]
+[list [vector-ref e 1] [vector-ref  e 2] [vector-ref e 0] ]
     ]

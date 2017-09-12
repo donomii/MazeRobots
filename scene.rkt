@@ -13,19 +13,19 @@
 
 ; The initial data for the scene.  You must provide data for mans, walls, jobs and things, even if they are empty lists
 [define scene-data `[
-                [mans  . ,[apply append [map [lambda [x]
-                                  [map [lambda [y]
-                                         `[ [2 0 2] []]
-                                         ] [iota 1 0 1]]
-                                  ] [iota 1 1 1]]]]
-                [walls . []]
-                ;[jobs  . ,[list [list 'pathTo [list 20 0 19]]]]
-                [jobs  . ,[list [list 'pathTo [list 20 0 20]]]]
-                [things . ,[apply append [map [lambda [x]
-                                         [map [lambda [y]
-                                                `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                                ] [iota 2 -20 8]]]
-                                              [iota 4 -20 8]]]]]]
+                     [mans  . ,[apply append [map [lambda [x]
+                                                    [map [lambda [y]
+                                                           `[ [2 0 2] []]
+                                                           ] [iota 1 0 1]]
+                                                    ] [iota 1 1 1]]]]
+                     [walls . []]
+                     ;[jobs  . ,[list [list 'pathTo [list 20 0 19]]]]
+                     [jobs  . ,[list [list 'pathTo [list 20 0 20]]]]
+                     [things . ,[apply append [map [lambda [x]
+                                                     [map [lambda [y]
+                                                            `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
+                                                            ] [iota 2 -20 8]]]
+                                                   [iota 4 -20 8]]]]]]
 
 
 
@@ -66,16 +66,16 @@
 ;
 ;[displayln [scene]]
 
-[define level-map [arr:array->mutable-array[arr:build-array [vector 101 101 2] [lambda [x] 1]]]]
+[define level-map [arr:array->mutable-array[arr:build-array [vector 101 101 5] [lambda [x] 1]]]]
 [scene-set! 'level-map level-map]
 
 [define maze
   [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
-                                 9001
-                                 1])
+                                                           9001
+                                                           1])
   
-                 [arr:list->array [vector 21 21] [string->list [string-replace
-                                                  "*********************
+                                           [arr:list->array [vector 21 21 1] [string->list [string-replace
+                                                                                          "*********************
 * *   *   *   *   * *
 * * * * * * * * * * *
 * * * * * * *   * * *
@@ -96,16 +96,16 @@
 *** * * *** * * * * *
 *   *     *   *   * *
 *********************"
-                                                  [format "~n"] ""]]
-                                  ])]]
+                                                                                          [format "~n"] ""]]
+                                                            ])]]
 
 [define level2
   [arr:array->mutable-array (arr:array-map (lambda (x) [if [equal? x #\*]
-                                 9001
-                                 1])
+                                                           9001
+                                                           1])
   
-                 [arr:list->array [vector 21 21] [string->list [string-replace
-                                                  "*********************
+                                           [arr:list->array [vector 21 21 1] [string->list [string-replace
+                                                                                          "*********************
 * *   *   *   *   * *
 * * * * * * * * * * *
 * * * * * * *   * * *
@@ -126,8 +126,8 @@
 *** * * *** * * * * *
 *   *     *   *   * *
 *********************"
-                                                  [format "~n"] ""]]
-                                  ])]]
+                                                                                          [format "~n"] ""]]
+                                                            ])]]
 
 
 
@@ -135,73 +135,90 @@
 
 [printf "Array width: ~a, array-height: ~a ~n" [array-width maze] [array-height maze]]
 
-[map [lambda [x]
-       [map [lambda [y]
-              [when [> [arr:array-ref maze [vector x y]] 9000]
-                [scene-set! 'walls [cons [list [add1 x] 0 [add1 y]]  [scene-get 'walls]]]
-              [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 0 [add1 y]]] 9001]]
-              ] [iota [+ 0 [array-height maze]]]]
-       ] [iota [+ 0 [array-width maze]]]]
+;[map [lambda [x]
+;       [map [lambda [y]
+;              [when [> [arr:array-ref maze [vector x y]] 9000]
+;                [scene-set! 'walls [cons [list [add1 x] 0 [add1 y]]  [scene-get 'walls]]]
+;                [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 0 [add1 y]]] 9001]]
+;              ] [iota [+ 0 [array-height maze]]]]
+;       ] [iota [+ 0 [array-width maze]]]]
+;
+;
+;[map [lambda [x]
+;       [map [lambda [y]
+;              [when [> [arr:array-ref level2 [vector x y]] 9000]
+;                [scene-set! 'walls [cons [list [add1 x] 1 [add1 y]]  [scene-get 'walls]]]
+;                [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 1 [add1 y]]] 9001]]
+;              ] [iota [+ 0 [array-height level2]]]]
+;       ] [iota [+ 0 [array-width level2]]]]
+
+[define [add-to-level a-map offset]
+  [printf "Given array: ~a,~a,~a~n" [array-width a-map] [array-height a-map] [array-depth a-map]]
+  [map [lambda [d]
+         [map [lambda [w]
+                [map [lambda [h]
+                       [when [> [arr:array-ref a-map [vector w h d]] 9000]
+                         [let [[point [addVec offset [weird-to-cartesian [vector w h d]]]]]
+                           [printf "Point: ~a~n" point]
+                         [scene-set! 'walls [cons point  [scene-get 'walls]]]   ;for now, walls are just a list of the points they occur at
+                         [arr:array-set! [scene-get 'level-map] [cartesian-to-weird point] 9001]]
+                       ]] [iota  [array-height a-map]]]
+                ] [iota  [array-width a-map]]]]
+         [iota  [array-depth a-map]]]
+       ]
 
 
-[map [lambda [x]
-       [map [lambda [y]
-              [when [> [arr:array-ref level2 [vector x y]] 9000]
-                [scene-set! 'walls [cons [list [add1 x] 1 [add1 y]]  [scene-get 'walls]]]
-              [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 1 [add1 y]]] 9001]]
-              ] [iota [+ 0 [array-height level2]]]]
-       ] [iota [+ 0 [array-width level2]]]]
+[add-to-level maze [list 1 0 1]]
+[add-to-level level2 [list 1 1 1]]
+
+  [scene-set! 'maze maze]
+
+  [scene-set! 'colours  [map [lambda [r]
+                               ;`[,[random] ,[random] ,[random]  1.0]
+                               [list [/ r 25] 1.0 1.0 1.0]
+                               ] [iota 25]]]
 
 
 
-[scene-set! 'maze maze]
-
-[scene-set! 'colours  [map [lambda [r]
-                        ;`[,[random] ,[random] ,[random]  1.0]
-                        [list [/ r 25] 1.0 1.0 1.0]
-                        ] [iota 25]]]
-
-
-
-[define [scene-tick]
-  ;[printf "Starting tick~n"]
-  [scene-set! 'mans (map (lambda (v  colour i)
-                      ;[printf "~a, ~a, ~a~n" v target colour]
+  [define [scene-tick]
+    ;[printf "Starting tick~n"]
+    [scene-set! 'mans (map (lambda (v  colour i)
+                             ;[printf "~a, ~a, ~a~n" v target colour]
                     
-                      [letrec [[jobqueue [second v]]
-                               [position [first v]]]
-                        ;[printf "Jobqueue: ~a~n"  jobqueue]
-                        [if [not [empty? jobqueue]]
-                            [letrec [[thisjob [car jobqueue]]
-                                     [target [second thisjob]]]
-                              [scene-set! 'selected i]
-                              [case [car thisjob]
+                             [letrec [[jobqueue [second v]]
+                                      [position [first v]]]
+                               ;[printf "Jobqueue: ~a~n"  jobqueue]
+                               [if [not [empty? jobqueue]]
+                                   [letrec [[thisjob [car jobqueue]]
+                                            [target [second thisjob]]]
+                                     [scene-set! 'selected i]
+                                     [case [car thisjob]
                                 
-                                ['pickUp
-                                 [begin
-                                   ;[set! boxes [remove-from-list [second thisjob] boxes]] change to things, when we add things
-                                   [list [first v] [cdr jobqueue]]]]
-                                ['drop
-                                 [begin
-                                   ;[set! boxes [cons [second thisjob] boxes]] change to things, when we add things
-                                   [list [first v] [cdr jobqueue]]]]
+                                       ['pickUp
+                                        [begin
+                                          ;[set! boxes [remove-from-list [second thisjob] boxes]] change to things, when we add things
+                                          [list [first v] [cdr jobqueue]]]]
+                                       ['drop
+                                        [begin
+                                          ;[set! boxes [cons [second thisjob] boxes]] change to things, when we add things
+                                          [list [first v] [cdr jobqueue]]]]
                                 
-                                [else [begin
-                                        [default-jobs v scene scene-get scene-set!]]]]]
+                                       [else [begin
+                                               [default-jobs v scene scene-get scene-set!]]]]]
                                 
                         
-                            [list [car v]
-                                  [if [not [empty? [scene-get 'jobs]]]
-                                      [letrec [[jobs [scene-get 'jobs]]
-                                            [newjob [car jobs]]]
-                                        [printf "pending-jobs: ~a~n" jobs]
-                                        [scene-set! 'jobs [cdr jobs]]
-                                        [printf "pending-jobs: ~a~n" [scene-get 'jobs]]
+                                   [list [car v]
+                                         [if [not [empty? [scene-get 'jobs]]]
+                                             [letrec [[jobs [scene-get 'jobs]]
+                                                      [newjob [car jobs]]]
+                                               [printf "pending-jobs: ~a~n" jobs]
+                                               [scene-set! 'jobs [cdr jobs]]
+                                               [printf "pending-jobs: ~a~n" [scene-get 'jobs]]
                                 
-                                        [printf "2 Moving to new job ~a~n"  newjob]
-                                        [expand-job newjob position [scene-get 'level-map]]]
-                                      '[]]
-                                  ]
-                            ]
-                        ])
-                    [scene-get 'mans]  [scene-get 'colours] [iota [length [scene-get 'mans]]])]]
+                                               [printf "2 Moving to new job ~a~n"  newjob]
+                                               [expand-job newjob position [scene-get 'level-map]]]
+                                             '[]]
+                                         ]
+                                   ]
+                               ])
+                           [scene-get 'mans]  [scene-get 'colours] [iota [length [scene-get 'mans]]])]]

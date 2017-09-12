@@ -63,7 +63,14 @@
                             ]
                           [when [equal? key #\f]
                             [send display-gl continuous-display-movement 'spin-down]
-                            ]])
+                            ]
+                          [when [equal? key #\t]
+                            [send display-gl continuous-display-movement 'slide-up]
+                            ]
+                          [when [equal? key #\g]
+                            [send display-gl continuous-display-movement 'slide-down]
+                            ]
+                          ])
                       
                       (define/override (on-subwindow-event win event)
                         ;[writeln "Caught mouse event"]
@@ -266,6 +273,7 @@
     (define rotation 0.0)
 
     (define view-slide-horiz 0.0)
+    (define view-slide-vert 0.0)
     (define zoom-level 0.0)
     (define view-rotx 20.0)
     (define view-roty 30.0)
@@ -312,6 +320,15 @@
     (define/public (slide-right)
       (set! view-slide-horiz (- view-slide-horiz 2.0))
       (refresh))
+
+        (define/public (slide-up)
+      (set! view-slide-vert (+ view-slide-vert 2.0))
+      (refresh))
+    
+    (define/public (slide-down)
+      (set! view-slide-vert (- view-slide-vert 2.0))
+      (refresh))
+    
 
     (define/public (zoom-in)
       (set! zoom-level (+ zoom-level 2.0))
@@ -407,6 +424,12 @@
                 ('slide-right
                  (set! view-slide-horiz (- view-slide-horiz [* ui-speed 1.0])))
 
+                ('slide-up
+                 (set! view-slide-vert (+ view-slide-vert [* ui-speed 1.0])))
+    
+                ('slide-down
+                 (set! view-slide-vert (- view-slide-vert [* ui-speed 1.0])))
+
                 ('zoom-in
                  (set! zoom-level (+ zoom-level [* ui-speed 2.0])))
     
@@ -415,7 +438,7 @@
                 ]]
             
             (gl-push-matrix)
-            (gl-translate view-slide-horiz  0.0 zoom-level)
+            (gl-translate view-slide-horiz  view-slide-vert zoom-level)
             
             (gl-rotate view-rotx 1.0 0.0 0.0)
             (gl-rotate view-roty 0.0 1.0 0.0)
