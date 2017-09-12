@@ -19,7 +19,8 @@
                                          ] [iota 1 0 1]]
                                   ] [iota 1 1 1]]]]
                 [walls . []]
-                [jobs  . ,[list [list 'pathTo [list 20 0 19]]]]
+                ;[jobs  . ,[list [list 'pathTo [list 20 0 19]]]]
+                [jobs  . ,[list [list 'pathTo [list 20 0 20]]]]
                 [things . ,[apply append [map [lambda [x]
                                          [map [lambda [y]
                                                 `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
@@ -65,7 +66,7 @@
 ;
 ;[displayln [scene]]
 
-[define level-map [arr:array->mutable-array[arr:build-array [vector 101 101] [lambda [x] 1]]]]
+[define level-map [arr:array->mutable-array[arr:build-array [vector 101 101 2] [lambda [x] 1]]]]
 [scene-set! 'level-map level-map]
 
 [define maze
@@ -99,13 +100,19 @@
                                   ])]]
 
 
+
+[printf "Array width: ~a, array-height: ~a ~n" [array-width maze] [array-height maze]]
+
 [map [lambda [x]
        [map [lambda [y]
               [when [> [arr:array-ref maze [vector x y]] 9000]
                 [scene-set! 'walls [cons [list [add1 x] 0 [add1 y]]  [scene-get 'walls]]]
-              [arr:array-set! [scene-get 'level-map] [vector [add1 x] [add1 y]] 9001]]
-              ] [iota [+ 0 [matrix-num-rows maze]]]]
-       ] [iota [+ 0 [matrix-num-cols maze]]]]
+              [arr:array-set! [scene-get 'level-map] [cartesian-to-weird [list [add1 x] 0 [add1 y]]] 9001]]
+              ] [iota [+ 0 [array-height maze]]]]
+       ] [iota [+ 0 [array-width maze]]]]
+
+
+
 
 [scene-set! 'maze maze]
 

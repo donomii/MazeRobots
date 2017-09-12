@@ -15,10 +15,10 @@
                [list 'drop target]
                ]]]
     ['pathTo [begin
-               [let [[path  [find-path a-map [list [first current-loc] [third current-loc]] [list [first [second a-job]] [third [second a-job]]]]]]
-                 [showmap a-map path [make-hash]]
+               [let [[path  [find-path a-map current-loc [second a-job]]]]
+                 ;[showmap a-map path [make-hash]]
                [printf "Expanded ~a into ~a~n" a-job path]
-                 [map [lambda [p] `[moveTo ,[list [first p] 0 [second p]]]] [reverse path]]]]]
+                 [map [lambda [p] `[moveTo  ,p]] [reverse path]]]]]
     [else [list a-job]]
     ]
   ]

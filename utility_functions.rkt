@@ -140,3 +140,25 @@
                                               colours [iota [length colours]]]
                     
                                ]]]]]]]
+
+[define array-height [lambda [an-array]
+[vector-ref  [array-shape an-array] 1]
+                       ]]
+
+[define array-width [lambda [an-array]
+[vector-ref [array-shape an-array] 0]
+                       ]]
+
+[define array-depth [lambda [an-array]
+[vector-ref [array-shape an-array] 2]
+                       ]]
+
+
+  [define [cartesian-to-weird e]
+    ;[printf "In: ~a out: ~a~n" e [vector [third e] [first e] [second e] ]]
+[vector [third e] [first e] [second e] ]
+    ]
+
+  [define [weird-to-cartesian e]
+[list [vector-ref e 1] [vector-ref  e 2] [vector-ref e 1] ]
+    ]

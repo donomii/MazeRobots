@@ -20,15 +20,15 @@
 ; (build-array 20 20 (λ (x y) [if [> (random 101) 50] 9001 1]))
 
 [provide find-path showmap]
-(require (prefix-in arr: math/matrix))
 (require math/array)
+[require "utility_functions.rkt"]
 [require srfi/1]
 [require rackunit]
 (define (test-map-1)
   (array-map (lambda (x) [if [> x 1]
                              9001
                              1])
-             (arr:matrix [
+             (array [
                           [1 1 1 1 1 1 1 1 1]
                           [1 1 1 1 1 1 2 1 1]
                           [1 1 1 1 2 2 2 1 1]
@@ -40,7 +40,7 @@
                           [1 1 1 1 1 1 1 1 1]])))
 
 [define [test-map-3]
-  (arr:build-matrix 20 20 (λ (x y) [if [> (random 101) 50] 9001 1]))
+  (build-array 20 20 (λ (x y) [if [> (random 101) 50] 9001 1]))
   ]
 
 (define (test-map-2)
@@ -48,7 +48,7 @@
                              9001
                              1])
              
-             (arr:matrix [
+             (array [
                           [0 0 0 0]
                           [1 1 1 0]
                           [0 0 0 0]
@@ -61,7 +61,7 @@
                              9001
                              1])
   
-             [arr:list->matrix 21 22 [string->list
+             [list->array 21 22 [string->list
                                       "
 *********************
   *   *   *   *   * *
@@ -113,16 +113,12 @@
   ;     [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]]
   
   [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
-      [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]
+      [fold + 0 [map [lambda [e] [array-ref scoremap [cartesian-to-weird e]]] path]]]
   ]
 
 [define [mapScore scoremap path end]
   ;[printf "mapscore ~a: ~a~n" path [+
-  ;[sqrt [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
-  ;]]
-  [+
-   [sqrt [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
-   ]
+[lengthVec [subVec [first path] end]]
   ]
 
 ;[basicLine start end]
@@ -138,7 +134,7 @@
   ]
 
 ;[define [neighbour-list] '[(-1 0) (1 0) (0 -1) (0 1) (-1 -1) (-1 1) (1 -1) (1 1)]]
-[define [neighbour-list] '[(-1 0) (1 0) (0 -1) (0 1) ]]
+[define [neighbour-list] '[(-1 0 0) (1 0 0) (0 0 -1) (0 0 1) ]]
 
 ;[improvePath [make-map] [basicLine start end]]
 
@@ -148,10 +144,14 @@
          [cons [map + n [car path]] path]]
        neighbours]]
 
+
+
+
 [define [doThing smap path start return closed]
   [hash-set! closed [car path] 1]
   ;[showmap smap path closed][displayln ""]
-  
+
+
   ;[printf "Score: ~a, path: ~a~n"  [lineScore smap path start] path]
   [if [equal? [car path] start ]
       [return path]
@@ -160,12 +160,8 @@
                                  [not
                                   [or
                                    [hash-ref closed [car e] #f]
-                                   
-                                   [not [< [caar e] [arr:matrix-num-rows smap]]]
-                                   [not [< [second [first e]] [arr:matrix-num-cols smap]]]
-                                   [< [caar e] 0]
-                                   [< [second [first e]] 0]
-                                   [> [array-ref smap [vector [caar e] [second [first e]] ]] 9000]
+
+                                   [out-of-bounds smap [first e]]
                                    ]]] [generate-new-paths path [neighbour-list]]]]]
    
         [if [empty? new-paths]
@@ -177,42 +173,44 @@
 
 [define [showmap bmap path closed]
   [let [[amap [mutable-array-copy bmap]]]
-    [map [lambda [p] [array-set! amap [apply vector p] -1]] path]
+    [map [lambda [p] [array-set! amap [cartesian-to-weird p] -1]] path]
     [if [not [empty? path]]
         [begin
-          [array-set! amap [apply vector [car [reverse path]]] -2]
-          [array-set! amap [apply vector [car path]] -2]]
-        [hash-map closed [lambda [k v] [array-set! amap [apply vector k] -2]] path]
+          [array-set! amap [cartesian-to-weird [car [reverse path]]] -2]
+          [array-set! amap [ cartesian-to-weird [car path]] -2]]
+        [hash-map closed [lambda [k v] [array-set! amap [cartesian-to-weird k] -2]] path]
         ]
     [map [lambda [x]
            [map [lambda [y]
                   [begin
-                    [if [equal? -2 [array-ref amap [vector x y]]]
+                    [if [equal? -2 [array-ref amap [vector x y 0]]]
                         [display "!"]
                         [begin
-                          [when [< [array-ref amap [vector x y]]0]
+                          [when [< [array-ref amap [vector x y 0]]0]
                             [display "┼"]]
-                          [when [> [array-ref amap [vector x y]]9000]
+                          [when [> [array-ref amap [vector x y 0]]9000]
                             [display "*"]]
-                          [when [and [<= [array-ref amap [vector x y]]9000] [>= [array-ref amap [vector x y]]0]]
+                          [when [and [<= [array-ref amap [vector x y 0]]9000] [>= [array-ref amap [vector x y 0]]0]]
                             [display "."]]]]]]
-                [iota [arr:matrix-num-cols amap]
+                [iota [array-width amap]
                       ]]
            [displayln ""]]
-         [iota [arr:matrix-num-rows amap]]]
+         [iota [array-width amap]]]
     ]]
 
 [define [out-of-bounds smap e]
   
                                   [or
                                    
-                                   [>= [car e] [arr:matrix-num-rows smap]]
-                                   [>= [second  e] [arr:matrix-num-cols smap]]
+                                   [>= [car e] [array-height smap]]
+                                   [>= [third  e] [array-width smap]]
+                                   [>= [second  e] [array-depth smap]]
                                    [< [car e] 0]
                                    [< [second  e] 0]
-                                   [< 9000 [array-ref smap [vector [second e] [first e]]]]]]
+                                   [< [third  e] 0]
+                                   [< 9000 [array-ref smap [cartesian-to-weird e]]]]]
 [define [find-path smap start end]
-  [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [arr:matrix-num-cols smap] [arr:matrix-num-rows smap] start end]
+  [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [array-width smap] [array-width smap] start end]
   [if [or [equal? start end] [out-of-bounds smap start] [out-of-bounds smap end]] 
       [begin
         [printf "Invalid input~n"]
