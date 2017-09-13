@@ -179,11 +179,11 @@
 ;       targets]
 ;  ]
 
-[define [drawBoxes]
+[define [drawBoxes colour positions]
   
   (gl-material-v 'front-and-back
                  'ambient-and-diffuse
-                 (vector->gl-float-vector (apply vector [list 0.0 0.0 1.0 1.0])))
+                 (vector->gl-float-vector (apply vector colour)))
   [map [lambda [v]
          (gl-push-matrix)
          [gl-scale 0.3 0.3 0.3]
@@ -191,7 +191,7 @@
          
          [cube]
          (gl-pop-matrix)]
-       [scene-get 'walls]]
+       positions]
   ]
 
 
@@ -253,7 +253,8 @@
 
 [define [do-paint]
   ;[drawTargets]
-  [drawBoxes]
+  [drawBoxes [list 0.0 0.0 1.0 1.0] [scene-get 'walls]]
+  [drawBoxes [list 0.0 1.0 0.0 1.0] [scene-get 'things]]
   ;[displayln mans]
   [drawMans]
 
