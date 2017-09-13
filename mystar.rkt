@@ -217,7 +217,7 @@
         '[]]
   [let [[closed [make-hash]]]
   [letrec [
-           [path [call/cc [lambda [return] [doThing smap [list [reverse start]] [reverse end] return closed]]]]] ;reverse for row-column addressing format
+           [path [call/cc [lambda [return] [doThing smap [list start]  end return closed]]]]] ;reverse for row-column addressing format
     [displayln "calculated path"]
     
     ;[showmap smap path closed]
