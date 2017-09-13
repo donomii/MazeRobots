@@ -23,9 +23,9 @@
                      [jobs  . ,[list [list 'pathTo [list 20 0 20]]]]
                      [things . ,[apply append [map [lambda [x]
                                                      [map [lambda [y]
-                                                            `[,[- [random 10] 5] 0 ,[- [random 10] 5]]
-                                                            ] [iota 2 -20 8]]]
-                                                   [iota 4 -20 8]]]]]]
+                                                            `[,[- [random 20] -2] 0 ,[- [random 20] -2]]
+                                                            ] [iota 8 -20 8]]]
+                                                   [iota 8 -20 8]]]]]]
 
 
 
@@ -51,10 +51,14 @@
   [cdr [assoc key scene-data]]]
 
 
+
 [define [del-assoc key a-list] [filter [lambda [e] [not [equal? [car e] key]]] a-list]]
 
 ; You must provide this to grant access to the scene data
 [define [scene-set! key value] [set! scene-data [cons [cons key value] [del-assoc key scene-data]]]]
+
+
+[scene-set! 'jobs [map [lambda [t] [list 'pathTo t]] [scene-get 'things]]]
 
 
 ; Tests (make a proper test suit)
@@ -159,7 +163,7 @@
                 [map [lambda [h]
                        [when [> [arr:array-ref a-map [vector w h d]] 9000]
                          [let [[point [addVec offset [weird-to-cartesian [vector w h d]]]]]
-                           [printf "Point: ~a~n" point]
+                           ;[printf "Point: ~a~n" point]
                          [scene-set! 'walls [cons point  [scene-get 'walls]]]   ;for now, walls are just a list of the points they occur at
                          [arr:array-set! [scene-get 'level-map] [cartesian-to-weird point] 9001]]
                        ]] [iota  [array-height a-map]]]
