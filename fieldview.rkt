@@ -32,7 +32,7 @@
                       (define/override (on-subwindow-char win event)
                         
                         [let [[key [send event get-key-code]]]
-                          [printf "Caught key event ~a~n" key]
+                          [verbose [format "Caught key event ~a~n" key]]
                           [when [equal? key 'release]
                             [send display-gl cease-display-movement]]
                           [when [equal? key #\x]

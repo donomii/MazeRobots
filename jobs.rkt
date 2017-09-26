@@ -5,22 +5,30 @@
 [require "utility_functions.rkt"]
 
 [define [expand-job a-job current-loc a-map]
-  [printf "Expanding: ~a~n" a-job]
-  [case [car a-job]
+  ;[printf "Expanding: ~a~n" a-job]
+  [let [[newjobs [case [car a-job]
     ['fetch [let [[target [second a-job]][destination [third a-job]]]
               [list
                [list 'pathTo target]
                [list 'pickUp target]
                [list 'pathTo destination]
-               [list 'drop target]
+               [list 'drop destination]
                ]]]
     ['pathTo [begin
                [let [[path  [find-path a-map current-loc [second a-job]]]]
                  ;[showmap a-map path [make-hash]]
-               [printf "Expanded ~a into ~a~n" a-job path]
-                 [map [lambda [p] `[moveTo  ,p]] [reverse path]]]]]
+               ;[printf "Expanded ~a into ~a~n" a-job path]
+                 [if [empty? path]
+                     `[[pathFail ,[second a-job]]]  ;If we can't path to the object, we create a fail "job"
+                     
+                  [map [lambda [p] `[moveTo  ,p]] [reverse path]] ;Otherwise return a sequence of moveTo jobs
+                  ]]]]
     [else [list a-job]]
-    ]
+    ]]]
+    ;[printf "Newjobs ~a, oldjob ~a~n" newjobs [list a-job]]
+    [if [equal? newjobs [list a-job]]
+        newjobs
+    [append [expand-job [car newjobs] current-loc a-map] [cdr newjobs]]]  ]
   ]
 
 [define [default-jobs v scene scene-get scene-set!]
@@ -33,17 +41,22 @@
                         [if [not [empty? jobqueue]]
                             [letrec [[thisjob [car jobqueue]]
                                      [target [second thisjob]]]
-                              
+                              ;[printf "Default job handler is handling: ~a~n" thisjob]
                               [case [car thisjob]
                                 ['moveTo
                                  [if [equal? position [second thisjob]]
                                      [let [[newjobs  [cdr jobqueue]]]
                                        ;[set! jobs [replace-in-list [car jobs] newjob jobs]]
-                                       [printf "1 Moving to new job ~a~n" [if [empty? newjobs] "none" [car newjobs]] ]
+                                       ;[printf "Arrived! Moving to new job ~a~n" [if [empty? newjobs] "none" [car newjobs]] ]
                                        [list [first v]
                                              newjobs]]
-                                     [list [map [lambda[e t] [moveTo e t 0.01]] position [second thisjob]]
+                                     ;This is the creature speed
+                                     [list [map [lambda[e t] [moveTo e t 1.0]] position [second thisjob]]
                                            jobqueue]]]
+                                ['pathFail
+                                 [printf "Failed to path to ~a~n" [second thisjob]]
+                                 [list position
+                                           [cdr jobqueue]]]
 ;                                ['pathTo
 ;                                 [begin
 ;                                   [printf "PathTo - position: ~a pathTo: ~a~n" position target]
@@ -69,7 +82,7 @@
 ;                                       ]]]
                                 [else [begin
                                         ;
-                                        [printf "I don't know how to do job: ~a~n" [car thisjob]]
+                                        [printf "I don't know how to do job: ~a~n" thisjob]
                                         v]]]]
                                 
                         
@@ -77,12 +90,12 @@
                                   [if [not [empty? [scene-get 'jobs]]]
                                       [letrec [[jobs [scene-get 'jobs]]
                                             [newjob [car jobs]]]
-                                        [printf "pending-jobs: ~a~n" jobs]
+                                        ;[printf "pending-jobs: ~a~n" jobs]
                                         [scene-set! 'jobs [cdr jobs]]
-                                        [printf "pending-jobs: ~a~n" [scene-get 'jobs]]
+                                        ;[printf "pending-jobs: ~a~n" [scene-get 'jobs]]
                                 
-                                        [printf "2 Moving to new job ~a~n"  newjob]
-                                        [expand-job newjob position [scene-get 'maze]]]
+                                        ;[printf "2 Moving to new job ~a~n"  newjob]
+                                        [expand-job newjob position [scene-get 'level-map]]]
                                       '[]]
                                   ]
                             ]

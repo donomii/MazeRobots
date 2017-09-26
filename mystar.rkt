@@ -48,12 +48,12 @@
                              9001
                              1])
              
-             (array [
-                          [0 0 0 0]
-                          [1 1 1 0]
-                          [0 0 0 0]
-                          [0 1 1 1]
-                          [0 0 0 0]
+             (list->array '[
+                          0 0 0 0
+                          1 1 1 0
+                          0 0 0 0
+                          0 1 1 1
+                          0 0 0 0
                           ])))
 
 [define [test-map-4]
@@ -112,8 +112,9 @@
   ; [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
   ;     [fold + 0 [map [lambda [e] [array-ref scoremap [vector [car e] [second e]]]] path]]]]
   
-  [+  [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] 
-      [fold + 0 [map [lambda [e] [array-ref scoremap [cartesian-to-weird e]]] path]]]
+  ;[+  [sqrt [+ [square [- [caar path] [car end]]] [square [- [second [first path]] [second end]]] ]]
+      [fold + 0 [map [lambda [e] [array-ref scoremap [cartesian-to-weird e]]] path]]
+  ;]
   ]
 
 [define [mapScore scoremap path end]
@@ -134,7 +135,7 @@
   ]
 
 ;[define [neighbour-list] '[(-1 0) (1 0) (0 -1) (0 1) (-1 -1) (-1 1) (1 -1) (1 1)]]
-[define [neighbour-list] '[(-1 0 0) (1 0 0) (0 0 -1) (0 0 1) (0 1 0) (0 -1 0)]]
+[define [neighbour-list] '[ (0 -1 0) (-1 0 0) (1 0 0) (0 0 -1) (0 0 1) (0 1 0)]]
 
 ;[improvePath [make-map] [basicLine start end]]
 
@@ -166,7 +167,7 @@
    
         [if [empty? new-paths]
             '[]
-            [map [lambda [a-path] [doThing smap a-path start return closed]] [sort  new-paths < #:key [lambda [l] [+ [lineScore smap l start] [/ [mapScore smap l start] 1000000]]]]]
+            [map [lambda [a-path] [doThing smap a-path start return closed]] [sort  new-paths < #:key [lambda [l] [+ [lineScore smap l start] [/ [mapScore smap l start] 100]]]]]
             ]]]]
 
 
@@ -200,96 +201,33 @@
 
 [define [out-of-bounds smap e]
   
-                                  [or
+                                  [cond
                                    
-                                   [>= [car e] [array-height smap]]
-                                   [>= [third  e] [array-width smap]]
-                                   [>= [second  e] [array-depth smap]]
-                                   [< [car e] 0]
-                                   [< [second  e] 0]
-                                   [< [third  e] 0]
-                                   [< 9000 [array-ref smap [cartesian-to-weird e]]]]]
+                                   [[>= [car e] [array-height smap]] "Point too high"]
+                                   [[>= [third  e] [array-width smap]] "Width too large"]
+                                   [[>= [second  e] [array-depth smap]] "Point too deep"]
+                                   [[< [car e] 0] "Height below zero"]
+                                   [[< [second  e] 0] "Point too deep"]
+                                   [[< [third  e] 0] "Width below zero"]
+                                   [[< 9000 [array-ref smap [cartesian-to-weird e]]] [format "Point ~a is inside a wall of value ~a" e [array-ref smap [cartesian-to-weird e]]]]
+                                    [else #f]
+                                    ]]
+
 [define [find-path smap start end]
-  [printf "Navigating matrix of size ~ax~a from ~a to ~a~n" [array-width smap] [array-width smap] start end]
-  [if [or [equal? start end] [out-of-bounds smap start] [out-of-bounds smap end]] 
+  [verbose [format "Navigating matrix of size ~ax~a from ~a to ~a~n" [array-width smap] [array-width smap] start end]]
+  [let [[error [or [out-of-bounds smap start] [out-of-bounds smap end]]]]
+  [if [or [equal? start end] error]
       [begin
-        [printf "Invalid input~n"]
+        [printf "Invalid input because ~a~n" error]
+        [printmap smap]
         '[]]
   [let [[closed [make-hash]]]
   [letrec [
            [path [call/cc [lambda [return] [doThing smap [list start]  end return closed]]]]] ;reverse for row-column addressing format
-    [displayln "calculated path"]
+    [verbose [format "calculated path"]]
     
     ;[showmap smap path closed]
     ;[not [empty? path]]
-    path]]]]
+    path]]]]]
 
 
-'[
-[check-equal? [find-path [array->mutable-array [test-map-2]] '[3 4] '[0 0]] '((0 0) (0 1) (0 2) (0 3) (1 3) (2 3) (2 2) (2 1) (2 0) (3 0) (4 0) (4 1) (4 2) (4 3)) "Check a simple map"]
-;[find-path [array->mutable-array [test-map-1]] '[7 7] '[1 1]]
-;[find-path [array->mutable-array [test-map-3]] '[19 19] '[0 0]]
-[check-equal? [find-path [array->mutable-array [test-map-4]] '[19 19] '[0 0]] '((0 0)
-  (1 0)
-  (1 1)
-  (1 2)
-  (2 2)
-  (3 2)
-  (4 2)
-  (5 2)
-  (6 2)
-  (7 2)
-  (7 3)
-  (7 4)
-  (8 4)
-  (9 4)
-  (9 3)
-  (9 2)
-  (10 2)
-  (11 2)
-  (11 3)
-  (11 4)
-  (11 5)
-  (11 6)
-  (11 7)
-  (11 8)
-  (12 8)
-  (13 8)
-  (13 7)
-  (13 6)
-  (14 6)
-  (15 6)
-  (16 6)
-  (17 6)
-  (18 6)
-  (19 6)
-  (19 7)
-  (19 8)
-  (18 8)
-  (17 8)
-  (16 8)
-  (15 8)
-  (15 9)
-  (15 10)
-  (16 10)
-  (17 10)
-  (17 11)
-  (17 12)
-  (18 12)
-  (19 12)
-  (19 13)
-  (19 14)
-  (18 14)
-  (17 14)
-  (16 14)
-  (15 14)
-  (15 15)
-  (15 16)
-  (16 16)
-  (17 16)
-  (18 16)
-  (19 16)
-  (19 17)
-  (19 18)
-  (19 19)) "Check a big maze"]
-]

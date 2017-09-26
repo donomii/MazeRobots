@@ -25,14 +25,19 @@
 [define [printmap amap]
   [map [lambda [x]
          [map [lambda [y]
-                [if [> [array-ref amap [vector x y]] 1]
+                [if [> [array-ref amap [vector x y 0]] 1]
                     [display "O"]
                     [display "."]
                     ]
                 ]
-              [iota 100]]
+              [iota [array-height amap]]]
          [displayln ""]]
-       [iota 100]]
+       [iota [array-width amap]]]
+  ]
+
+[define [verbose message]
+  ;[displayln message]
+  #t
   ]
 
 [define [falsifyMap width height amap]
@@ -71,7 +76,7 @@
 ;moves number a towards number b, by c
 [define [moveTo a b c]
   ;[printf "Moving from ~a to ~a, step ~a~n" a b c]
-  [if  [< [* [- a b] [- a b]] c]
+  [if  [< [abs [- a b]] [* 2 c]]
        b
        [if [< a b]
            [+ a c]
