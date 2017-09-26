@@ -76,7 +76,7 @@
 ;moves number a towards number b, by c
 [define [moveTo a b c]
   ;[printf "Moving from ~a to ~a, step ~a~n" a b c]
-  [if  [< [abs [- a b]] [* 2 c]]
+  [if  [< [abs [- a b]] c]
        b
        [if [< a b]
            [+ a c]
