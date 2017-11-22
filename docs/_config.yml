@@ -1,1 +1,5 @@
 theme: jekyll-theme-tactile
+title: "Leap"
+description: "A small game in Racket Scheme"
+show_downloads: false
+google_analytics: UA-63812845-7
