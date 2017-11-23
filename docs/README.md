@@ -1,6 +1,6 @@
 # Leap
 
-This is a few graphics related demos I am combining into a small game.  It hoeps to be, one day, a simple colony management/sime builder type game.
+This is a few graphics related demos I am combining into a small game.  It hopes to be, one day, a simple colony management/sime builder type game.
 
 Current status:  it can draw mazes and make a little figure run through them.
 
