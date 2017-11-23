@@ -1,2 +1,6 @@
-# leapingFigures
-Racket scheme program to draw figures.  Most of the time they appear to be leaping.
+# leaping
+A game in Racket Scheme.
+
+
+Leap is currently a maze simulator that I plan to develop into a building/colony simulation game. 
+
