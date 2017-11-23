@@ -8,4 +8,4 @@ Current status:  it can draw mazes and make a little figure run through them.
 
 Even more fun than doing the game, is writing about doing the game.  Check out some words
 
-Day 1 - [Draw things on a screen](dev diary/1)
+Day 1 - [Draw things on a screen](dev%20diary/1)
