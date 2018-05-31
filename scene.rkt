@@ -62,8 +62,9 @@
                                                            9001
                                                            1])
   
-                                           [arr:list->array [vector 21 21 1] [string->list [string-replace
-                                                                                            "*********************
+                                           [arr:list->array [vector 21 21 1]
+                                                            [filter [lambda [x]  [not [equal? x  #\return] ] ] [string->list [string-replace
+"*********************
   *   *   *   *   *  
 * * * * * * * * * * *
 * * * * * * *   * * *
@@ -84,7 +85,7 @@
 *** * * *** * * * * *
 *   *     *   *   * *
 *********************"
-                                                                                            [format "~n"] ""]]
+                                                                                            [format "~n"] ""]]]
                                                             ])]]
 
 [define level2
@@ -92,7 +93,7 @@
                                                            9001
                                                            1])
   
-                                           [arr:list->array [vector 21 21 1] [string->list [string-replace
+                                           [arr:list->array [vector 21 21 1] [filter [lambda [x] [not [equal? x #\return ] ] ][string->list [string-replace
                                                                                             "*********************
   *   *   *   *   *  
 * * * * * * * * * * *
@@ -114,7 +115,7 @@
 *** * * *** * * * * *
 *   *     *   *   * *
 *********************"
-                                                                                            [format "~n"] ""]]
+                                                                                            [format "~n"] ""]]]
                                                             ])]]
 
 
