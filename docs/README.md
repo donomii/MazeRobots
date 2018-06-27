@@ -13,3 +13,4 @@ Even more fun than doing the game, is writing about doing the game.  Check out s
 * Day 3 - [Pathfinding](dev%20diary/3)
 * Day 4 - [Refactoring](dev%20diary/4)
 * Day 5 - [Fixing pathfinding](dev%20diary/5)
+* Day 6 - [Object picking](dev%20diary/6)
