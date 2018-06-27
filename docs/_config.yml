@@ -1,4 +1,4 @@
-theme: jekyll-theme-tactile
+theme: jekyll-theme-minimal
 title: "Leap"
 description: "Leap: A small game in Racket Scheme"
 show_downloads: false
