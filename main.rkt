@@ -199,7 +199,7 @@
 
 [define [drawMans]
   
-  (map (lambda (v  colour i)
+  (map (lambda (v  colour skin i)
          [map [lambda [p]
                     [when [equal? [car p] 'moveTo]
                         [begin
@@ -228,12 +228,8 @@
                [scene-set! 'selected i]
                [case [car thisjob]
                  ['moveTo
-                  (apply gl-rotate (fullAngle [car v] target))
-                  ]
-                   
-                   
+                  (apply gl-rotate (fullAngle [car v] target))]
                  [else v]]]
-               
              ]
            ]
          
@@ -242,12 +238,14 @@
          [gl-scale 0.1 0.1 0.1]
          [if [equal? i selected]
              [figure [list 1.0 0.0 0.0 1.0]]
-             [figure colour]]
+             [if wantpix
+                 [figure colour]
+             [figure skin]]]
 
          (gl-pop-matrix)
                  
          )
-       [scene-get 'mans]  [scene-get 'colours] [iota [length [scene-get 'mans]]])
+       [scene-get 'mans]  [scene-get 'colours] [scene-get 'skins] [iota [length [scene-get 'mans]]])
   ]
 
 
@@ -263,7 +261,6 @@
     
 ;    [printf "Mans: ~a~n" mans]
     ]
-
   ]
 
 (define gears-canvas%
@@ -452,7 +449,8 @@
               [printf "Got pixel: ~a~n"  [get-gl-pixel mouseX mouseY]]
               [set! selected [matchColour [get-gl-pixel mouseX mouseY] [scene-get 'colours]]]
               [printf "figure: ~a~n" selected]
-              [set! wantpix #f]]
+              [set! wantpix #f]
+              ]
             
             ;(sleep 0.1)
              
