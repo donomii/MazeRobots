@@ -144,7 +144,7 @@
 
   [scene-set! 'colours  [map [lambda [r]
                                ;`[,[random] ,[random] ,[random]  1.0]
-                               [list [/ r 25] 0.0 0.0 1.0]
+                               [list [sub1 [/ r 25]] 0.0 0.0 1.0]
                                ] [iota 25]]]
     [scene-set! 'skins  [map [lambda [r]
                                ;`[,[random] ,[random] ,[random]  1.0]
