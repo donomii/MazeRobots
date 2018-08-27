@@ -450,9 +450,10 @@
               [set! selected [matchColour [get-gl-pixel mouseX mouseY] [scene-get 'colours]]]
               [printf "figure: ~a~n" selected]
               [set! wantpix #f]
+              ;(sleep 0.5)
               ]
             
-            ;(sleep 0.1)
+            
              
             ])
       
