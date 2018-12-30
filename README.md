@@ -1,7 +1,7 @@
 # leap
-A game in Racket Scheme.
+A maze demo in Racket Scheme.
 
 
-Leap is currently a maze simulator that I plan to develop into a building/colony simulation game. 
+Leap is a maze simulator that I used to explore pathfinding and developing a job/task system. You can see the development progress in the [demo](demo)
 
 ![Leaping figures]( ohyeah.png )
