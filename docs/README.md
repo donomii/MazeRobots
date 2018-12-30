@@ -1,12 +1,12 @@
 # Leap
 
-This is a few graphics related demos I am combining into a small game.  It hopes to be, one day, a simple colony management/sime builder type game.
+This is a few graphics related demos I am combining into an amusing demonstration.  Well, it amuses me.
 
 Current status:  it can draw mazes and make a little figure run through them.
 
 # Dev diaries
 
-Even more fun than doing the game, is writing about doing the game.  Check out some words
+Even more fun than doing the demo, is writing about doing the demo.  Check out some words
 
 * Day 1 - [Draw things on a screen](dev%20diary/1)
 * Day 2 - [Jobs system](dev%20diary/2)
