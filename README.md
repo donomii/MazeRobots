@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/donomii/leapingFigures.svg?branch=master)](https://travis-ci.org/donomii/leapingFigures)
+
 # leap
 A maze demo in Racket Scheme.
 
