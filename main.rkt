@@ -129,7 +129,6 @@
 ;                             ;           (map (lambda (ind) (write (cvector-ref cvec ind))) (build-list 300 values))  
 ;                               
 ;                             ))))
-(define count 0)
 
 [define paused #t]
 [random-seed 3]
