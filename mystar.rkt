@@ -87,14 +87,6 @@
                                ])]
 
 
-[define [moveTo a b c]
-  ;[printf "Moving from ~a to ~a, step ~a~n" a b c]
-  [if  [< [* [- a b] [- a b]] c]
-       b
-       [if [< a b]
-           [+ a c]
-           [- a c]]
-       ]]
 
 [define [lineRec start end]
   [displayln start]
