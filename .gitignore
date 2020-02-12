@@ -1,5 +1,6 @@
 compiled/drracket/errortrace/figure_rkt.zo
 *.dep
 *.bak
+*.rkt~
 compiled/drracket/errortrace/simple_figure_rkt.zo
 compiled
